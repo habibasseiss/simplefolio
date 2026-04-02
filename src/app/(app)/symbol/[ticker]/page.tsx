@@ -1,5 +1,6 @@
 import { ImportDividendsButton } from "@/components/import-dividends-button"
 import { Page, PageHeader, PageTitle } from "@/components/page"
+import { SymbolDateFilter } from "@/components/symbol-date-filter"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -29,6 +30,7 @@ import {
   TrendingUpIcon,
 } from "lucide-react"
 import Link from "next/link"
+import { Suspense } from "react"
 
 function TransactionTypeBadge({ type }: { type: string }) {
   const variants: Record<
@@ -69,19 +71,35 @@ function formatNumber(value: number, decimals = 2) {
 
 export default async function SymbolPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ ticker: string }>
+  searchParams: Promise<{ from?: string; to?: string }>
 }) {
   const { ticker } = await params
+  const { from, to } = await searchParams
   const symbol = decodeURIComponent(ticker).toUpperCase()
   const userId = await getDefaultUserId()
 
-  const [transactions, quote] = await Promise.all([
+  const [allTransactions, quote] = await Promise.all([
     findTransactionsBySymbol(userId, symbol),
     getFinanceProvider()
       .getGlobalQuote(symbol)
       .catch(() => null),
   ])
+
+  const fromDate = from ? new Date(from + "T00:00:00") : null
+  const toDate = to ? new Date(to + "T23:59:59.999") : null
+
+  const transactions =
+    fromDate || toDate
+      ? allTransactions.filter((tx) => {
+        const d = new Date(tx.date)
+        if (fromDate && d < fromDate) return false
+        if (toDate && d > toDate) return false
+        return true
+      })
+      : allTransactions
 
   const totalShares = transactions.reduce((acc, tx) => {
     if (tx.type === "BUY") return acc + tx.quantity
@@ -102,6 +120,21 @@ export default async function SymbolPage({
       ? currentValue - totalShares * averageCost
       : null
 
+  const dividendTransactions = transactions.filter((tx) => tx.type === "DIVIDEND")
+  const totalDividendGross = dividendTransactions.reduce(
+    (acc, tx) => acc + tx.quantity * tx.unitPrice,
+    0,
+  )
+  const totalDividendTaxPaid = dividendTransactions.reduce(
+    (acc, tx) => acc + tx.quantity * tx.unitPrice * (tx.nraTax ?? 0),
+    0,
+  )
+  const totalDividendNet = dividendTransactions.reduce(
+    (acc, tx) => acc + calcTransactionTotal(tx),
+    0,
+  )
+  const hasDividendTax = totalDividendTaxPaid > 0
+
   return (
     <Page>
       <PageHeader>
@@ -120,40 +153,44 @@ export default async function SymbolPage({
             )}
           </div>
         </div>
-        <ImportDividendsButton symbol={symbol} />
+        <div className="flex items-center gap-2">
+          <Suspense>
+            <SymbolDateFilter from={from} to={to} />
+          </Suspense>
+          <ImportDividendsButton symbol={symbol} />
+        </div>
       </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Card 1: Current Price */}
         {quote ? (
-          <>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Current Price</CardDescription>
-                <CardTitle className="text-2xl">
-                  {formatCurrency(quote.price)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <span
-                  className={
-                    quote.change >= 0
-                      ? "flex items-center gap-1 text-sm text-green-600 dark:text-green-400"
-                      : "flex items-center gap-1 text-sm text-red-600 dark:text-red-400"
-                  }
-                >
-                  {quote.change >= 0 ? (
-                    <ArrowUpIcon className="size-3" />
-                  ) : (
-                    <ArrowDownIcon className="size-3" />
-                  )}
-                  {formatCurrency(Math.abs(quote.change))} (
-                  {formatNumber(Math.abs(quote.changePercent))}%)
-                </span>
-              </CardContent>
-            </Card>
-          </>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Current Price</CardDescription>
+              <CardTitle className="text-2xl">
+                {formatCurrency(quote.price)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <span
+                className={
+                  quote.change >= 0
+                    ? "flex items-center gap-1 text-sm text-green-600 dark:text-green-400"
+                    : "flex items-center gap-1 text-sm text-red-600 dark:text-red-400"
+                }
+              >
+                {quote.change >= 0 ? (
+                  <ArrowUpIcon className="size-3" />
+                ) : (
+                  <ArrowDownIcon className="size-3" />
+                )}
+                {formatCurrency(Math.abs(quote.change))} (
+                {formatNumber(Math.abs(quote.changePercent))}%)
+              </span>
+            </CardContent>
+          </Card>
         ) : (
-          <Card className="col-span-3">
+          <Card className="col-span-2">
             <CardHeader>
               <CardDescription>Market data unavailable</CardDescription>
               <CardContent className="px-0 text-sm text-muted-foreground">
@@ -164,69 +201,92 @@ export default async function SymbolPage({
           </Card>
         )}
 
+        {/* Card 2: Position (Shares Held + Market Value consolidated) */}
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Shares Held</CardDescription>
+            <CardDescription>Position</CardDescription>
             <CardTitle className="text-2xl">
-              {formatNumber(totalShares)}
+              {formatNumber(totalShares)} shares
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-1">
             {averageCost !== null && (
               <p className="text-sm text-muted-foreground">
-                Avg. cost: {formatCurrency(averageCost)}
+                Avg. cost {formatCurrency(averageCost)}
               </p>
             )}
+            {currentValue !== null && (
+              <p className="text-sm text-muted-foreground">
+                Market value {formatCurrency(currentValue)}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Cost basis {formatCurrency(totalCost)}
+            </p>
           </CardContent>
         </Card>
 
-        {currentValue !== null && unrealizedPnl !== null && (
-          <>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Market Value</CardDescription>
-                <CardTitle className="text-2xl">
-                  {formatCurrency(currentValue)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Cost basis: {formatCurrency(totalCost)}
-                </p>
-              </CardContent>
-            </Card>
+        {/* Card 3: Unrealized P&L */}
+        {unrealizedPnl !== null && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Unrealized P&L</CardDescription>
+              <CardTitle
+                className={
+                  unrealizedPnl >= 0
+                    ? "text-2xl text-green-600 dark:text-green-400"
+                    : "text-2xl text-red-600 dark:text-red-400"
+                }
+              >
+                {unrealizedPnl >= 0 ? "+" : ""}
+                {formatCurrency(unrealizedPnl)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <span
+                className={
+                  unrealizedPnl >= 0
+                    ? "text-sm text-green-600 dark:text-green-400"
+                    : "text-sm text-red-600 dark:text-red-400"
+                }
+              >
+                {unrealizedPnl >= 0 ? "+" : ""}
+                {totalCost > 0
+                  ? formatNumber((unrealizedPnl / totalCost) * 100)
+                  : "0.00"}
+                %
+              </span>
+            </CardContent>
+          </Card>
+        )}
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Unrealized P&L</CardDescription>
-                <CardTitle
-                  className={
-                    unrealizedPnl >= 0
-                      ? "text-2xl text-green-600 dark:text-green-400"
-                      : "text-2xl text-red-600 dark:text-red-400"
-                  }
-                >
-                  {unrealizedPnl >= 0 ? "+" : ""}
-                  {formatCurrency(unrealizedPnl)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <span
-                  className={
-                    unrealizedPnl >= 0
-                      ? "text-sm text-green-600 dark:text-green-400"
-                      : "text-sm text-red-600 dark:text-red-400"
-                  }
-                >
-                  {unrealizedPnl >= 0 ? "+" : ""}
-                  {totalCost > 0
-                    ? formatNumber((unrealizedPnl / totalCost) * 100)
-                    : "0.00"}
-                  %
-                </span>
-              </CardContent>
-            </Card>
-          </>
+        {/* Card 4: Dividends */}
+        {dividendTransactions.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Dividends Received</CardDescription>
+              <CardTitle className="text-2xl text-blue-600 dark:text-blue-400">
+                {formatCurrency(totalDividendNet)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1">
+              {hasDividendTax ? (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Gross {formatCurrency(totalDividendGross)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Tax withheld {formatCurrency(totalDividendTaxPaid)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {dividendTransactions.length} payment
+                  {dividendTransactions.length !== 1 ? "s" : ""}
+                </p>
+              )}
+            </CardContent>
+          </Card>
         )}
       </div>
 
@@ -234,9 +294,15 @@ export default async function SymbolPage({
         <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-16 text-center">
           <TrendingUpIcon className="size-10 text-muted-foreground" />
           <div>
-            <p className="font-medium">No transactions for {symbol}</p>
+            <p className="font-medium">
+              {fromDate || toDate
+                ? `No transactions for ${symbol} in this period`
+                : `No transactions for ${symbol}`}
+            </p>
             <p className="text-sm text-muted-foreground">
-              Transactions with this symbol will appear here.
+              {fromDate || toDate
+                ? "Try adjusting the date range."
+                : "Transactions with this symbol will appear here."}
             </p>
           </div>
         </div>

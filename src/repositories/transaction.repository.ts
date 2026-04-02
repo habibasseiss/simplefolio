@@ -61,3 +61,13 @@ export async function deleteTransaction(id: string, accountId: string) {
     where: { id, accountId },
   });
 }
+
+export async function findAllSymbols(userId: string): Promise<string[]> {
+  const rows = await prisma.transaction.findMany({
+    where: { account: { userId }, type: { in: ["BUY", "SELL"] } },
+    select: { symbol: true },
+    distinct: ["symbol"],
+    orderBy: { symbol: "asc" },
+  });
+  return rows.map((r) => r.symbol);
+}

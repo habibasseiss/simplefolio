@@ -17,6 +17,7 @@ import {
 import {
   CircleHelpIcon,
   LayoutDashboardIcon,
+  LineChartIcon,
   Settings2Icon,
   TrendingUpIcon,
   WalletIcon,
@@ -38,6 +39,11 @@ const data = {
       title: "Accounts",
       url: "/accounts",
       icon: <WalletIcon />,
+    },
+    {
+      title: "Holdings",
+      url: "/holdings",
+      icon: <LineChartIcon />,
     },
     {
       title: "Portfolio",
