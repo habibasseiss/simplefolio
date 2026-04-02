@@ -18,7 +18,6 @@ export function DeleteAccountButton({ accountId }: { accountId: string }) {
   return (
     <Button
       variant="outline"
-      size="sm"
       className="text-destructive hover:text-destructive"
       onClick={handleDelete}
       disabled={isPending}

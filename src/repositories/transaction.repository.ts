@@ -2,13 +2,32 @@ import type {
   CreateTransactionInput,
   UpdateTransactionInput,
 } from "@/domain/transaction/transaction.schema";
+import type { Transaction } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+
+export type TransactionWithAccount = Transaction & {
+  account: { id: string; name: string; currency: string };
+};
 
 export async function findTransactionsByAccountId(accountId: string) {
   return prisma.transaction.findMany({
     where: { accountId },
     orderBy: { date: "desc" },
   });
+}
+
+export async function findTransactionsBySymbol(
+  userId: string,
+  symbol: string,
+): Promise<TransactionWithAccount[]> {
+  return prisma.transaction.findMany({
+    where: {
+      symbol,
+      account: { userId },
+    },
+    include: { account: { select: { id: true, name: true, currency: true } } },
+    orderBy: { date: "desc" },
+  }) as Promise<TransactionWithAccount[]>;
 }
 
 export async function findTransactionById(id: string, accountId: string) {

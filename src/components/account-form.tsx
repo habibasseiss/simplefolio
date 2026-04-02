@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionState } from "react"
+import { DeleteAccountButton } from './delete-account-button'
 
 const CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD", "CHF", "JPY", "BRL"]
 
 interface AccountFormProps {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>
   defaultValues?: {
+    id?: string
     name?: string
     currency?: string
   }
@@ -65,9 +67,16 @@ export function AccountForm({
         <p className="text-sm text-destructive">{state.error}</p>
       )}
 
-      <Button type="submit" disabled={isPending} className="w-fit">
-        {isPending ? "Saving…" : submitLabel}
-      </Button>
+      <div className="flex-1 flex items-center gap-2">
+
+        {defaultValues?.id && (
+          <DeleteAccountButton accountId={defaultValues.id} />
+        )}
+
+        <Button type="submit" disabled={isPending} className="w-fit">
+          {isPending ? "Saving…" : submitLabel}
+        </Button>
+      </div>
     </form>
   )
 }

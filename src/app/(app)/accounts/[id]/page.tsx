@@ -1,4 +1,3 @@
-import { DeleteAccountButton } from "@/components/delete-account-button"
 import { Page, PageHeader, PageTitle } from "@/components/page"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -91,7 +90,6 @@ export default async function AccountDetailPage({
               Edit
             </Link>
           </Button>
-          <DeleteAccountButton accountId={id} />
           <Button asChild size="sm">
             <Link href={`/accounts/${id}/transactions/new`}>
               <PlusIcon className="size-4" />
@@ -144,7 +142,12 @@ export default async function AccountDetailPage({
                       <TransactionTypeBadge type={tx.type} />
                     </TableCell>
                     <TableCell className="font-mono font-medium">
-                      {tx.symbol}
+                      <Link
+                        href={`/symbol/${tx.symbol}`}
+                        className="hover:underline"
+                      >
+                        {tx.symbol}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-right">{tx.quantity}</TableCell>
                     <TableCell className="text-right">
