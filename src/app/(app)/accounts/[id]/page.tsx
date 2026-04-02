@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { TransactionType } from "@/domain/transaction/transaction.types"
+import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { findAccountById } from "@/repositories/account.repository"
 import { findTransactionsByAccountId } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
@@ -132,7 +133,7 @@ export default async function AccountDetailPage({
             </TableHeader>
             <TableBody>
               {transactions.map((tx) => {
-                const total = tx.quantity * tx.unitPrice + tx.fee
+                const total = calcTransactionTotal(tx)
                 return (
                   <TableRow key={tx.id}>
                     <TableCell className="text-muted-foreground">

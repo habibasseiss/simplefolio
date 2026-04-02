@@ -1,3 +1,4 @@
+import { ImportDividendsButton } from "@/components/import-dividends-button"
 import { Page, PageHeader, PageTitle } from "@/components/page"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,10 +18,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { TransactionType } from "@/domain/transaction/transaction.types"
+import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { getFinanceProvider } from "@/lib/finance"
-import {
-  findTransactionsBySymbol
-} from "@/repositories/transaction.repository"
+import { findTransactionsBySymbol } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
 import {
   ArrowDownIcon,
@@ -90,8 +90,8 @@ export default async function SymbolPage({
   }, 0)
 
   const totalCost = transactions.reduce((acc, tx) => {
-    if (tx.type === "BUY") return acc + tx.quantity * tx.unitPrice + tx.fee
-    if (tx.type === "SELL") return acc - tx.quantity * tx.unitPrice + tx.fee
+    if (tx.type === "BUY") return acc + calcTransactionTotal(tx)
+    if (tx.type === "SELL") return acc - calcTransactionTotal(tx)
     return acc
   }, 0)
 
@@ -120,6 +120,7 @@ export default async function SymbolPage({
             )}
           </div>
         </div>
+        <ImportDividendsButton symbol={symbol} />
       </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -255,7 +256,7 @@ export default async function SymbolPage({
             </TableHeader>
             <TableBody>
               {transactions.map((tx) => {
-                const total = tx.quantity * tx.unitPrice + tx.fee
+                const total = calcTransactionTotal(tx)
                 return (
                   <TableRow key={tx.id}>
                     <TableCell className="text-muted-foreground">

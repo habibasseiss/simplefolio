@@ -11,6 +11,7 @@ export type Transaction = {
   quantity: number;
   unitPrice: number;
   fee: number;
+  nraTax: number | null;
   notes: string | null;
   accountId: string;
   createdAt: Date;

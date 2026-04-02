@@ -35,6 +35,7 @@ model Transaction {
   quantity  Float
   unitPrice Float
   fee       Float    @default(0)
+  nraTax    Float? // Non-Resident Alien withholding tax rate (e.g. 0.3 = 30%)
   notes     String?
   accountId String
   account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)

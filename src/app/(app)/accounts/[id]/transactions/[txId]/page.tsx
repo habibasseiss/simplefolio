@@ -27,6 +27,7 @@ export default async function EditTransactionPage({
   if (!account || !transaction) notFound()
 
   const action = updateTransactionAction.bind(null, id, txId)
+  const nraTaxRate = process.env.NRA_TAX ? parseFloat(process.env.NRA_TAX) : null
 
   return (
     <Page>
@@ -47,6 +48,7 @@ export default async function EditTransactionPage({
       <TransactionForm
         action={action}
         defaultValues={transaction as unknown as Partial<Transaction>}
+        nraTaxRate={nraTaxRate}
         submitLabel="Save Changes"
       />
     </Page>

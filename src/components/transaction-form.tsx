@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { Transaction } from "@/domain/transaction/transaction.types"
 import { TRANSACTION_TYPES } from "@/domain/transaction/transaction.types"
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 
 function toDateInputValue(date: Date | string | undefined) {
   if (!date) return ""
@@ -17,14 +17,19 @@ interface TransactionFormProps {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>
   defaultValues?: Partial<Transaction>
   submitLabel?: string
+  nraTaxRate?: number | null
 }
 
 export function TransactionForm({
   action,
   defaultValues,
   submitLabel = "Save",
+  nraTaxRate,
 }: TransactionFormProps) {
   const [state, formAction, isPending] = useActionState(action, {})
+  const [selectedType, setSelectedType] = useState(
+    defaultValues?.type ?? "BUY",
+  )
 
   return (
     <form action={formAction} className="flex flex-col gap-6 max-w-md">
@@ -33,7 +38,8 @@ export function TransactionForm({
         <select
           id="type"
           name="type"
-          defaultValue={defaultValues?.type ?? "BUY"}
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value as typeof selectedType)}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
           {TRANSACTION_TYPES.map((t) => (
@@ -132,6 +138,21 @@ export function TransactionForm({
           <p className="text-sm text-destructive">{state.fieldErrors.fee[0]}</p>
         )}
       </div>
+
+      {selectedType === "DIVIDEND" && nraTaxRate != null && (
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="applyNraTax"
+            name="applyNraTax"
+            className="size-4 rounded border-input accent-primary"
+            defaultChecked={defaultValues?.nraTax != null}
+          />
+          <Label htmlFor="applyNraTax">
+            Apply NRA tax withholding ({(nraTaxRate * 100).toFixed(0)}%)
+          </Label>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="notes">Notes (optional)</Label>

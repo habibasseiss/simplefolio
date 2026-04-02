@@ -28,9 +28,15 @@ export async function createTransactionAction(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const parsed = createTransactionSchema.safeParse(
-    Object.fromEntries(formData),
-  );
+  const applyNraTax = formData.get("applyNraTax") === "on";
+  const nraTax = applyNraTax && process.env.NRA_TAX
+    ? parseFloat(process.env.NRA_TAX)
+    : null;
+
+  const parsed = createTransactionSchema.safeParse({
+    ...Object.fromEntries(formData),
+    nraTax,
+  });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
@@ -49,9 +55,15 @@ export async function updateTransactionAction(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const parsed = updateTransactionSchema.safeParse(
-    Object.fromEntries(formData),
-  );
+  const applyNraTax = formData.get("applyNraTax") === "on";
+  const nraTax = applyNraTax && process.env.NRA_TAX
+    ? parseFloat(process.env.NRA_TAX)
+    : null;
+
+  const parsed = updateTransactionSchema.safeParse({
+    ...Object.fromEntries(formData),
+    nraTax,
+  });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }

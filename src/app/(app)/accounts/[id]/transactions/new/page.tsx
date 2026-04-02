@@ -20,6 +20,7 @@ export default async function NewTransactionPage({
   if (!account) notFound()
 
   const action = createTransactionAction.bind(null, id)
+  const nraTaxRate = process.env.NRA_TAX ? parseFloat(process.env.NRA_TAX) : null
 
   return (
     <Page>
@@ -36,7 +37,7 @@ export default async function NewTransactionPage({
           </div>
         </div>
       </PageHeader>
-      <TransactionForm action={action} submitLabel="Add Transaction" />
+      <TransactionForm action={action} nraTaxRate={nraTaxRate} submitLabel="Add Transaction" />
     </Page>
   )
 }

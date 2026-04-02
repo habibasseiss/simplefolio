@@ -30,12 +30,14 @@ export type TransactionAvgAggregateOutputType = {
   quantity: number | null
   unitPrice: number | null
   fee: number | null
+  nraTax: number | null
 }
 
 export type TransactionSumAggregateOutputType = {
   quantity: number | null
   unitPrice: number | null
   fee: number | null
+  nraTax: number | null
 }
 
 export type TransactionMinAggregateOutputType = {
@@ -46,6 +48,7 @@ export type TransactionMinAggregateOutputType = {
   quantity: number | null
   unitPrice: number | null
   fee: number | null
+  nraTax: number | null
   notes: string | null
   accountId: string | null
   createdAt: Date | null
@@ -60,6 +63,7 @@ export type TransactionMaxAggregateOutputType = {
   quantity: number | null
   unitPrice: number | null
   fee: number | null
+  nraTax: number | null
   notes: string | null
   accountId: string | null
   createdAt: Date | null
@@ -74,6 +78,7 @@ export type TransactionCountAggregateOutputType = {
   quantity: number
   unitPrice: number
   fee: number
+  nraTax: number
   notes: number
   accountId: number
   createdAt: number
@@ -86,12 +91,14 @@ export type TransactionAvgAggregateInputType = {
   quantity?: true
   unitPrice?: true
   fee?: true
+  nraTax?: true
 }
 
 export type TransactionSumAggregateInputType = {
   quantity?: true
   unitPrice?: true
   fee?: true
+  nraTax?: true
 }
 
 export type TransactionMinAggregateInputType = {
@@ -102,6 +109,7 @@ export type TransactionMinAggregateInputType = {
   quantity?: true
   unitPrice?: true
   fee?: true
+  nraTax?: true
   notes?: true
   accountId?: true
   createdAt?: true
@@ -116,6 +124,7 @@ export type TransactionMaxAggregateInputType = {
   quantity?: true
   unitPrice?: true
   fee?: true
+  nraTax?: true
   notes?: true
   accountId?: true
   createdAt?: true
@@ -130,6 +139,7 @@ export type TransactionCountAggregateInputType = {
   quantity?: true
   unitPrice?: true
   fee?: true
+  nraTax?: true
   notes?: true
   accountId?: true
   createdAt?: true
@@ -231,6 +241,7 @@ export type TransactionGroupByOutputType = {
   quantity: number
   unitPrice: number
   fee: number
+  nraTax: number | null
   notes: string | null
   accountId: string
   createdAt: Date
@@ -268,6 +279,7 @@ export type TransactionWhereInput = {
   quantity?: Prisma.FloatFilter<"Transaction"> | number
   unitPrice?: Prisma.FloatFilter<"Transaction"> | number
   fee?: Prisma.FloatFilter<"Transaction"> | number
+  nraTax?: Prisma.FloatNullableFilter<"Transaction"> | number | null
   notes?: Prisma.StringNullableFilter<"Transaction"> | string | null
   accountId?: Prisma.StringFilter<"Transaction"> | string
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
@@ -283,6 +295,7 @@ export type TransactionOrderByWithRelationInput = {
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
   fee?: Prisma.SortOrder
+  nraTax?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -301,6 +314,7 @@ export type TransactionWhereUniqueInput = Prisma.AtLeast<{
   quantity?: Prisma.FloatFilter<"Transaction"> | number
   unitPrice?: Prisma.FloatFilter<"Transaction"> | number
   fee?: Prisma.FloatFilter<"Transaction"> | number
+  nraTax?: Prisma.FloatNullableFilter<"Transaction"> | number | null
   notes?: Prisma.StringNullableFilter<"Transaction"> | string | null
   accountId?: Prisma.StringFilter<"Transaction"> | string
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
@@ -316,6 +330,7 @@ export type TransactionOrderByWithAggregationInput = {
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
   fee?: Prisma.SortOrder
+  nraTax?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -338,6 +353,7 @@ export type TransactionScalarWhereWithAggregatesInput = {
   quantity?: Prisma.FloatWithAggregatesFilter<"Transaction"> | number
   unitPrice?: Prisma.FloatWithAggregatesFilter<"Transaction"> | number
   fee?: Prisma.FloatWithAggregatesFilter<"Transaction"> | number
+  nraTax?: Prisma.FloatNullableWithAggregatesFilter<"Transaction"> | number | null
   notes?: Prisma.StringNullableWithAggregatesFilter<"Transaction"> | string | null
   accountId?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Transaction"> | Date | string
@@ -352,6 +368,7 @@ export type TransactionCreateInput = {
   quantity: number
   unitPrice: number
   fee?: number
+  nraTax?: number | null
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -366,6 +383,7 @@ export type TransactionUncheckedCreateInput = {
   quantity: number
   unitPrice: number
   fee?: number
+  nraTax?: number | null
   notes?: string | null
   accountId: string
   createdAt?: Date | string
@@ -380,6 +398,7 @@ export type TransactionUpdateInput = {
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
+  nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -394,6 +413,7 @@ export type TransactionUncheckedUpdateInput = {
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
+  nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accountId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -408,6 +428,7 @@ export type TransactionCreateManyInput = {
   quantity: number
   unitPrice: number
   fee?: number
+  nraTax?: number | null
   notes?: string | null
   accountId: string
   createdAt?: Date | string
@@ -422,6 +443,7 @@ export type TransactionUpdateManyMutationInput = {
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
+  nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -435,6 +457,7 @@ export type TransactionUncheckedUpdateManyInput = {
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
+  nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   accountId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -459,6 +482,7 @@ export type TransactionCountOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
   fee?: Prisma.SortOrder
+  nraTax?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -469,6 +493,7 @@ export type TransactionAvgOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
   fee?: Prisma.SortOrder
+  nraTax?: Prisma.SortOrder
 }
 
 export type TransactionMaxOrderByAggregateInput = {
@@ -479,6 +504,7 @@ export type TransactionMaxOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
   fee?: Prisma.SortOrder
+  nraTax?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -493,6 +519,7 @@ export type TransactionMinOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
   fee?: Prisma.SortOrder
+  nraTax?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -503,6 +530,7 @@ export type TransactionSumOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
   fee?: Prisma.SortOrder
+  nraTax?: Prisma.SortOrder
 }
 
 export type TransactionCreateNestedManyWithoutAccountInput = {
@@ -555,6 +583,14 @@ export type FloatFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }
@@ -567,6 +603,7 @@ export type TransactionCreateWithoutAccountInput = {
   quantity: number
   unitPrice: number
   fee?: number
+  nraTax?: number | null
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -580,6 +617,7 @@ export type TransactionUncheckedCreateWithoutAccountInput = {
   quantity: number
   unitPrice: number
   fee?: number
+  nraTax?: number | null
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -621,6 +659,7 @@ export type TransactionScalarWhereInput = {
   quantity?: Prisma.FloatFilter<"Transaction"> | number
   unitPrice?: Prisma.FloatFilter<"Transaction"> | number
   fee?: Prisma.FloatFilter<"Transaction"> | number
+  nraTax?: Prisma.FloatNullableFilter<"Transaction"> | number | null
   notes?: Prisma.StringNullableFilter<"Transaction"> | string | null
   accountId?: Prisma.StringFilter<"Transaction"> | string
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
@@ -635,6 +674,7 @@ export type TransactionCreateManyAccountInput = {
   quantity: number
   unitPrice: number
   fee?: number
+  nraTax?: number | null
   notes?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -648,6 +688,7 @@ export type TransactionUpdateWithoutAccountInput = {
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
+  nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -661,6 +702,7 @@ export type TransactionUncheckedUpdateWithoutAccountInput = {
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
+  nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -674,6 +716,7 @@ export type TransactionUncheckedUpdateManyWithoutAccountInput = {
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
+  nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -689,6 +732,7 @@ export type TransactionSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   quantity?: boolean
   unitPrice?: boolean
   fee?: boolean
+  nraTax?: boolean
   notes?: boolean
   accountId?: boolean
   createdAt?: boolean
@@ -704,6 +748,7 @@ export type TransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   quantity?: boolean
   unitPrice?: boolean
   fee?: boolean
+  nraTax?: boolean
   notes?: boolean
   accountId?: boolean
   createdAt?: boolean
@@ -719,6 +764,7 @@ export type TransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   quantity?: boolean
   unitPrice?: boolean
   fee?: boolean
+  nraTax?: boolean
   notes?: boolean
   accountId?: boolean
   createdAt?: boolean
@@ -734,13 +780,14 @@ export type TransactionSelectScalar = {
   quantity?: boolean
   unitPrice?: boolean
   fee?: boolean
+  nraTax?: boolean
   notes?: boolean
   accountId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "symbol" | "date" | "quantity" | "unitPrice" | "fee" | "notes" | "accountId" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
+export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "symbol" | "date" | "quantity" | "unitPrice" | "fee" | "nraTax" | "notes" | "accountId" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
 export type TransactionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   account?: boolean | Prisma.AccountDefaultArgs<ExtArgs>
 }
@@ -764,6 +811,7 @@ export type $TransactionPayload<ExtArgs extends runtime.Types.Extensions.Interna
     quantity: number
     unitPrice: number
     fee: number
+    nraTax: number | null
     notes: string | null
     accountId: string
     createdAt: Date
@@ -1199,6 +1247,7 @@ export interface TransactionFieldRefs {
   readonly quantity: Prisma.FieldRef<"Transaction", 'Float'>
   readonly unitPrice: Prisma.FieldRef<"Transaction", 'Float'>
   readonly fee: Prisma.FieldRef<"Transaction", 'Float'>
+  readonly nraTax: Prisma.FieldRef<"Transaction", 'Float'>
   readonly notes: Prisma.FieldRef<"Transaction", 'String'>
   readonly accountId: Prisma.FieldRef<"Transaction", 'String'>
   readonly createdAt: Prisma.FieldRef<"Transaction", 'DateTime'>
