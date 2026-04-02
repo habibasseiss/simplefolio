@@ -1,0 +1,11 @@
+{
+  "github.copilot.chat.additionalReadAccessPaths": [
+    "node_modules"
+  ],
+  "chat.tools.terminal.autoApprove": {
+    "ls": true,
+    "find": true,
+    "grep": true,
+    "wc": true
+  }
+}
