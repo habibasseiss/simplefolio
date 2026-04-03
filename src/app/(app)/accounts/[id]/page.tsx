@@ -1,4 +1,5 @@
-import { Page, PageHeader, PageTitle } from "@/components/page"
+import { SetActions, SetHeader } from "@/components/header-context"
+import { Page } from "@/components/page"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,7 +18,6 @@ import { getDefaultUserId } from "@/repositories/user.repository"
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  ChevronLeftIcon,
   DollarSignIcon,
   PencilIcon,
   PlusIcon,
@@ -72,33 +72,26 @@ export default async function AccountDetailPage({
 
   return (
     <Page>
-      <PageHeader>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/accounts">
-              <ChevronLeftIcon className="size-4" />
-            </Link>
-          </Button>
-          <div>
-            <PageTitle>{account.name}</PageTitle>
-            <p className="text-sm text-muted-foreground">{account.currency}</p>
-          </div>
+      <SetHeader back="/accounts">
+        <div>
+          <h1 className="text-base font-medium">{account.name}</h1>
+          <p className="text-xs text-muted-foreground">{account.currency}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/accounts/${id}/edit`}>
-              <PencilIcon className="size-4" />
-              Edit
-            </Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link href={`/accounts/${id}/transactions/new`}>
-              <PlusIcon className="size-4" />
-              Add Transaction
-            </Link>
-          </Button>
-        </div>
-      </PageHeader>
+      </SetHeader>
+      <SetActions>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={`/accounts/${id}/edit`}>
+            <PencilIcon className="size-4" />
+            Edit
+          </Link>
+        </Button>
+        <Button asChild size="sm">
+          <Link href={`/accounts/${id}/transactions/new`}>
+            <PlusIcon className="size-4" />
+            Add Transaction
+          </Link>
+        </Button>
+      </SetActions>
 
       {transactions.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-16 text-center">

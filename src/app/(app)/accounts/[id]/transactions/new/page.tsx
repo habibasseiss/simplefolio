@@ -1,11 +1,9 @@
 import { createTransactionAction } from "@/actions/transaction.actions"
-import { Page, PageHeader, PageTitle } from "@/components/page"
+import { SetHeader } from "@/components/header-context"
+import { Page } from "@/components/page"
 import { TransactionForm } from "@/components/transaction-form"
-import { Button } from "@/components/ui/button"
 import { findAccountById } from "@/repositories/account.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
-import { ChevronLeftIcon } from "lucide-react"
-import Link from "next/link"
 import { notFound } from "next/navigation"
 
 export default async function NewTransactionPage({
@@ -24,19 +22,12 @@ export default async function NewTransactionPage({
 
   return (
     <Page>
-      <PageHeader>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={`/accounts/${id}`}>
-              <ChevronLeftIcon className="size-4" />
-            </Link>
-          </Button>
-          <div>
-            <PageTitle>New Transaction</PageTitle>
-            <p className="text-sm text-muted-foreground">{account.name}</p>
-          </div>
+      <SetHeader back={`/accounts/${id}`}>
+        <div>
+          <h1 className="text-base font-medium">New Transaction</h1>
+          <p className="text-xs text-muted-foreground">{account.name}</p>
         </div>
-      </PageHeader>
+      </SetHeader>
       <TransactionForm action={action} nraTaxRate={nraTaxRate} submitLabel="Add Transaction" />
     </Page>
   )

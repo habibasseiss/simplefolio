@@ -1,14 +1,12 @@
 import { updateTransactionAction } from "@/actions/transaction.actions"
 import { DeleteTransactionButton } from "@/components/delete-transaction-button"
-import { Page, PageHeader, PageTitle } from "@/components/page"
+import { SetActions, SetHeader } from "@/components/header-context"
+import { Page } from "@/components/page"
 import { TransactionForm } from "@/components/transaction-form"
-import { Button } from "@/components/ui/button"
 import type { Transaction } from "@/domain/transaction/transaction.types"
 import { findAccountById } from "@/repositories/account.repository"
 import { findTransactionById } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
-import { ChevronLeftIcon } from "lucide-react"
-import Link from "next/link"
 import { notFound } from "next/navigation"
 
 export default async function EditTransactionPage({
@@ -31,20 +29,15 @@ export default async function EditTransactionPage({
 
   return (
     <Page>
-      <PageHeader>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={`/accounts/${id}`}>
-              <ChevronLeftIcon className="size-4" />
-            </Link>
-          </Button>
-          <div>
-            <PageTitle>Edit Transaction</PageTitle>
-            <p className="text-sm text-muted-foreground">{account.name}</p>
-          </div>
+      <SetHeader back={`/accounts/${id}`}>
+        <div>
+          <h1 className="text-base font-medium">Edit Transaction</h1>
+          <p className="text-xs text-muted-foreground">{account.name}</p>
         </div>
+      </SetHeader>
+      <SetActions>
         <DeleteTransactionButton accountId={id} txId={txId} />
-      </PageHeader>
+      </SetActions>
       <TransactionForm
         action={action}
         defaultValues={transaction as unknown as Partial<Transaction>}

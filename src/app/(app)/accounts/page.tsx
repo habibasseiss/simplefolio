@@ -1,4 +1,5 @@
-import { Page, PageHeader, PageTitle } from "@/components/page"
+import { SetActions, SetHeader } from "@/components/header-context"
+import { Page } from "@/components/page"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,15 +14,17 @@ export default async function AccountsPage() {
 
   return (
     <Page>
-      <PageHeader>
-        <PageTitle>Accounts</PageTitle>
+      <SetHeader>
+        <h1 className="text-base font-medium">Accounts</h1>
+      </SetHeader>
+      <SetActions>
         <Button asChild size="sm">
           <Link href="/accounts/new">
             <PlusIcon className="size-4" />
             New Account
           </Link>
         </Button>
-      </PageHeader>
+      </SetActions>
 
       {accounts.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-16 text-center">

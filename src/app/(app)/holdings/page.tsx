@@ -1,4 +1,5 @@
-import { Page, PageHeader, PageTitle } from "@/components/page"
+import { SetHeader } from "@/components/header-context"
+import { Page } from "@/components/page"
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { findAllSymbols } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
@@ -11,9 +12,9 @@ export default async function HoldingsPage() {
 
   return (
     <Page>
-      <PageHeader>
-        <PageTitle>Holdings</PageTitle>
-      </PageHeader>
+      <SetHeader>
+        <h1 className="text-base font-medium">Holdings</h1>
+      </SetHeader>
 
       {symbols.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-16 text-center">

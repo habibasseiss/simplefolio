@@ -1,11 +1,9 @@
 import { updateAccountAction } from "@/actions/account.actions"
 import { AccountForm } from "@/components/account-form"
-import { Page, PageHeader, PageTitle } from "@/components/page"
-import { Button } from "@/components/ui/button"
+import { SetHeader } from "@/components/header-context"
+import { Page } from "@/components/page"
 import { findAccountById } from "@/repositories/account.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
-import { ChevronLeftIcon } from "lucide-react"
-import Link from "next/link"
 import { notFound } from "next/navigation"
 
 export default async function EditAccountPage({
@@ -23,16 +21,9 @@ export default async function EditAccountPage({
 
   return (
     <Page>
-      <PageHeader>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={`/accounts/${id}`}>
-              <ChevronLeftIcon className="size-4" />
-            </Link>
-          </Button>
-          <PageTitle>Edit Account</PageTitle>
-        </div>
-      </PageHeader>
+      <SetHeader back={`/accounts/${id}`}>
+        <h1 className="text-base font-medium">Edit Account</h1>
+      </SetHeader>
       <AccountForm
         action={action}
         defaultValues={{ id: account.id, name: account.name, currency: account.currency }}

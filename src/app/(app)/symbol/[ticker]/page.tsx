@@ -1,8 +1,8 @@
+import { SetActions, SetHeader } from "@/components/header-context"
 import { ImportDividendsButton } from "@/components/import-dividends-button"
-import { Page, PageHeader, PageTitle } from "@/components/page"
+import { Page } from "@/components/page"
 import { SymbolDateFilter } from "@/components/symbol-date-filter"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -26,7 +26,6 @@ import { getDefaultUserId } from "@/repositories/user.repository"
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  ChevronLeftIcon,
   TrendingUpIcon,
 } from "lucide-react"
 import Link from "next/link"
@@ -137,29 +136,22 @@ export default async function SymbolPage({
 
   return (
     <Page>
-      <PageHeader>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/accounts">
-              <ChevronLeftIcon className="size-4" />
-            </Link>
-          </Button>
-          <div>
-            <PageTitle>{symbol}</PageTitle>
-            {quote && (
-              <p className="text-sm text-muted-foreground">
-                {quote.latestTradingDay}
-              </p>
-            )}
-          </div>
+      <SetHeader back="/accounts">
+        <div>
+          <h1 className="text-base font-medium">{symbol}</h1>
+          {quote && (
+            <p className="text-xs text-muted-foreground">
+              {quote.latestTradingDay}
+            </p>
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <Suspense>
-            <SymbolDateFilter from={from} to={to} />
-          </Suspense>
-          <ImportDividendsButton symbol={symbol} />
-        </div>
-      </PageHeader>
+      </SetHeader>
+      <SetActions>
+        <Suspense>
+          <SymbolDateFilter from={from} to={to} />
+        </Suspense>
+        <ImportDividendsButton symbol={symbol} />
+      </SetActions>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Card 1: Current Price */}
