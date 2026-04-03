@@ -79,12 +79,6 @@ export default async function AccountDetailPage({
         </div>
       </SetHeader>
       <SetActions>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/accounts/${id}/edit`}>
-            <PencilIcon className="size-4" />
-            Edit
-          </Link>
-        </Button>
         <Button asChild size="sm">
           <Link href={`/accounts/${id}/transactions/new`}>
             <PlusIcon className="size-4" />

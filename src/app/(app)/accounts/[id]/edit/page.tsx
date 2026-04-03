@@ -21,7 +21,7 @@ export default async function EditAccountPage({
 
   return (
     <Page>
-      <SetHeader back={`/accounts/${id}`}>
+      <SetHeader back={`/accounts`}>
         <h1 className="text-base font-medium">Edit Account</h1>
       </SetHeader>
       <AccountForm

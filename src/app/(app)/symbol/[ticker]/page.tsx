@@ -100,13 +100,14 @@ export default async function SymbolPage({
       })
       : allTransactions
 
-  const totalShares = transactions.reduce((acc, tx) => {
+  // Position is always computed from ALL transactions — it's a cumulative running total
+  const totalShares = allTransactions.reduce((acc, tx) => {
     if (tx.type === "BUY") return acc + tx.quantity
     if (tx.type === "SELL") return acc - tx.quantity
     return acc
   }, 0)
 
-  const totalCost = transactions.reduce((acc, tx) => {
+  const totalCost = allTransactions.reduce((acc, tx) => {
     if (tx.type === "BUY") return acc + calcTransactionTotal(tx)
     if (tx.type === "SELL") return acc - calcTransactionTotal(tx)
     return acc
@@ -119,6 +120,7 @@ export default async function SymbolPage({
       ? currentValue - totalShares * averageCost
       : null
 
+  // Dividends are filtered by the selected period
   const dividendTransactions = transactions.filter((tx) => tx.type === "DIVIDEND")
   const totalDividendGross = dividendTransactions.reduce(
     (acc, tx) => acc + tx.quantity * tx.unitPrice,
