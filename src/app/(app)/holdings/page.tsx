@@ -3,7 +3,7 @@ import { Page } from "@/components/page"
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { findAllSymbols } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
-import { ArrowRightIcon, TrendingUpIcon } from "lucide-react"
+import { ArrowRightIcon, LayersIcon, TrendingUpIcon } from "lucide-react"
 import Link from "next/link"
 
 export default async function HoldingsPage() {
@@ -28,6 +28,19 @@ export default async function HoldingsPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link href="/holdings/all">
+            <Card className="h-full transition-colors hover:bg-muted/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <LayersIcon className="size-4 text-muted-foreground" />
+                    <CardTitle className="text-base">All Holdings</CardTitle>
+                  </div>
+                  <ArrowRightIcon className="size-4 text-muted-foreground" />
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
           {symbols.map((symbol) => (
             <Link key={symbol} href={`/symbol/${symbol}`}>
               <Card className="h-full transition-colors hover:bg-muted/50">
@@ -37,11 +50,6 @@ export default async function HoldingsPage() {
                     <ArrowRightIcon className="size-4 text-muted-foreground" />
                   </div>
                 </CardHeader>
-                {/* <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {symbol}
-                  </p>
-                </CardContent> */}
               </Card>
             </Link>
           ))}

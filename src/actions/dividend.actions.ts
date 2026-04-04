@@ -2,6 +2,7 @@
 
 import { getFinanceProvider } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
+import { findAllSymbols } from "@/repositories/transaction.repository";
 import { getDefaultUserId } from "@/repositories/user.repository";
 
 export interface ImportDividendsResult {
@@ -127,4 +128,33 @@ export async function importDividendsAction(
   }
 
   return { inserted, skipped };
+}
+
+export interface ImportAllDividendsResult {
+  inserted: number;
+  skipped: number;
+  errors: { symbol: string; error: string }[];
+}
+
+export async function importAllDividendsAction(): Promise<
+  ImportAllDividendsResult
+> {
+  const userId = await getDefaultUserId();
+  const symbols = await findAllSymbols(userId);
+
+  let inserted = 0;
+  let skipped = 0;
+  const errors: { symbol: string; error: string }[] = [];
+
+  for (const symbol of symbols) {
+    const result = await importDividendsAction(symbol);
+    if (result.error) {
+      errors.push({ symbol, error: result.error });
+    } else {
+      inserted += result.inserted;
+      skipped += result.skipped;
+    }
+  }
+
+  return { inserted, skipped, errors };
 }

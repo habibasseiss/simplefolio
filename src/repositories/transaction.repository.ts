@@ -71,3 +71,13 @@ export async function findAllSymbols(userId: string): Promise<string[]> {
   });
   return rows.map((r) => r.symbol);
 }
+
+export async function findAllTransactionsForUser(
+  userId: string,
+): Promise<TransactionWithAccount[]> {
+  return prisma.transaction.findMany({
+    where: { account: { userId } },
+    include: { account: { select: { id: true, name: true, currency: true } } },
+    orderBy: { date: "desc" },
+  }) as Promise<TransactionWithAccount[]>;
+}

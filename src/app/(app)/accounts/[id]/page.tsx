@@ -17,11 +17,10 @@ import { findAccountById } from "@/repositories/account.repository"
 import { findTransactionsByAccountId } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
 import {
-  ArrowDownIcon,
-  ArrowUpIcon,
   DollarSignIcon,
+  MinusIcon,
   PencilIcon,
-  PlusIcon,
+  PlusIcon
 } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -168,17 +167,18 @@ export default async function AccountDetailPage({
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {tx.type === "SELL" ? (
-                        <span className="flex items-center justify-end gap-1 text-green-600 dark:text-green-400">
-                          <ArrowUpIcon className="size-3" />
+                        <span className="flex items-center justify-end gap-1 text-red-600 dark:text-red-400">
+                          <MinusIcon className="size-3" />
                           {formatCurrency(total, account.currency)}
                         </span>
                       ) : tx.type === "DIVIDEND" ? (
-                        <span className="flex items-center justify-end gap-1 text-blue-600 dark:text-blue-400">
+                        <span className="flex items-center justify-end gap-1 text-blue-400 dark:text-blue-600">
+                          <PlusIcon className="size-3" />
                           {formatCurrency(total, account.currency)}
                         </span>
                       ) : (
-                        <span className="flex items-center justify-end gap-1 text-red-600 dark:text-red-400">
-                          <ArrowDownIcon className="size-3" />
+                        <span className="flex items-center justify-end gap-1 text-blue-600 dark:text-blue-400">
+                          <PlusIcon className="size-3" />
                           {formatCurrency(total, account.currency)}
                         </span>
                       )}
