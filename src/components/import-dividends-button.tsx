@@ -27,8 +27,8 @@ export function ImportDividendsButton({ symbol }: { symbol: string }) {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleClick} disabled={isPending}>
-      <DownloadIcon className="size-4" />
+    <Button variant="outline" onClick={handleClick} disabled={isPending}>
+      <DownloadIcon />
       {isPending ? "Importing…" : "Get Dividends"}
     </Button>
   )

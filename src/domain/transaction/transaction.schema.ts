@@ -6,7 +6,7 @@ export const createTransactionSchema = z.object({
   symbol: z.string().min(1, "Symbol is required").max(20).toUpperCase(),
   date: z.coerce.date(),
   quantity: z.coerce.number().positive("Quantity must be positive"),
-  unitPrice: z.coerce.number().positive("Unit price must be positive"),
+  unitPrice: z.coerce.number().min(0, "Unit price cannot be negative"),
   fee: z.coerce.number().min(0, "Fee cannot be negative").default(0),
   nraTax: z.number().min(0).max(1).nullable().optional(),
   notes: z.string().max(500).optional(),

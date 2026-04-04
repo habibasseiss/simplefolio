@@ -1,3 +1,4 @@
+import { AccountTypeFilter } from "@/components/account-type-filter"
 import { SetActions, SetHeader } from "@/components/header-context"
 import { Page } from "@/components/page"
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +25,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { Suspense } from "react"
 
 function TransactionTypeBadge({ type }: { type: string }) {
   const variants: Record<
@@ -55,20 +57,35 @@ function formatDate(date: Date) {
   }).format(new Date(date))
 }
 
+const VALID_TYPES = ["BUY", "SELL", "DIVIDEND"] as const
+type TxType = (typeof VALID_TYPES)[number]
+
 export default async function AccountDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ types?: string }>
 }) {
   const { id } = await params
+  const { types: rawTypes } = await searchParams
   const userId = await getDefaultUserId()
 
-  const [account, transactions] = await Promise.all([
+  const activeTypes = rawTypes
+    ? (rawTypes.split(",").filter((t): t is TxType => (VALID_TYPES as readonly string[]).includes(t)))
+    : null
+
+  const [account, allTransactions] = await Promise.all([
     findAccountById(id, userId),
     findTransactionsByAccountId(id),
   ])
 
   if (!account) notFound()
+
+  const transactions =
+    activeTypes && activeTypes.length > 0
+      ? allTransactions.filter((tx) => activeTypes.includes(tx.type as TxType))
+      : allTransactions
 
   return (
     <Page>
@@ -79,7 +96,10 @@ export default async function AccountDetailPage({
         </div>
       </SetHeader>
       <SetActions>
-        <Button asChild size="sm">
+        <Suspense>
+          <AccountTypeFilter activeTypes={activeTypes} />
+        </Suspense>
+        <Button asChild>
           <Link href={`/accounts/${id}/transactions/new`}>
             <PlusIcon className="size-4" />
             Add Transaction

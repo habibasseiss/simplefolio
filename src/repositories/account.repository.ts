@@ -18,6 +18,12 @@ export async function findAccountById(id: string, userId: string) {
   });
 }
 
+export async function findAccountByName(name: string, userId: string) {
+  const accounts = await prisma.account.findMany({ where: { userId } });
+  const lower = name.toLowerCase();
+  return accounts.find((a) => a.name.toLowerCase() === lower) ?? null;
+}
+
 export async function createAccount(userId: string, data: CreateAccountInput) {
   return prisma.account.create({
     data: { ...data, userId },

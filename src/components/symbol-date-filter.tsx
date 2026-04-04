@@ -78,11 +78,11 @@ export function SymbolDateFilter({
       <PopoverTrigger asChild>
         <Button
           variant={hasFilters ? "secondary" : "outline"}
-          size="sm"
+          size="icon"
           className="relative"
           aria-label="Filter by date"
         >
-          <CalendarIcon className="size-4" />
+          <CalendarIcon />
           {hasFilters && (
             <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" />
           )}
