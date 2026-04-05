@@ -13,6 +13,7 @@ export interface ImportDividendsResult {
 
 export async function importDividendsAction(
   symbol: string,
+  overwrite = false,
 ): Promise<ImportDividendsResult> {
   const userId = await getDefaultUserId();
 
@@ -95,16 +96,18 @@ export async function importDividendsAction(
       });
 
       if (existing) {
-        await prisma.transaction.update({
-          where: { id: existing.id },
-          data: {
-            quantity: sharesAtExDate,
-            unitPrice: dividend.amount,
-            nraTax: nraTaxRate,
-            notes:
-              `Auto-imported dividend. Ex-date: ${dividend.exDividendDate}`,
-          },
-        });
+        if (overwrite) {
+          await prisma.transaction.update({
+            where: { id: existing.id },
+            data: {
+              quantity: sharesAtExDate,
+              unitPrice: dividend.amount,
+              nraTax: nraTaxRate,
+              notes:
+                `Auto-imported dividend. Ex-date: ${dividend.exDividendDate}`,
+            },
+          });
+        }
         skipped++;
         continue;
       }
@@ -136,9 +139,9 @@ export interface ImportAllDividendsResult {
   errors: { symbol: string; error: string }[];
 }
 
-export async function importAllDividendsAction(): Promise<
-  ImportAllDividendsResult
-> {
+export async function importAllDividendsAction(
+  overwrite = false,
+): Promise<ImportAllDividendsResult> {
   const userId = await getDefaultUserId();
   const symbols = await findAllSymbols(userId);
 
@@ -147,7 +150,7 @@ export async function importAllDividendsAction(): Promise<
   const errors: { symbol: string; error: string }[] = [];
 
   for (const symbol of symbols) {
-    const result = await importDividendsAction(symbol);
+    const result = await importDividendsAction(symbol, overwrite);
     if (result.error) {
       errors.push({ symbol, error: result.error });
     } else {

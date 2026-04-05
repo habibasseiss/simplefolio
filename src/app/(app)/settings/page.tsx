@@ -1,0 +1,66 @@
+import { SetHeader } from "@/components/header-context"
+import { ImportAllDividendsButton } from "@/components/import-all-dividends-button"
+import { Page } from "@/components/page"
+import { ArrowRightIcon, RefreshCwIcon, UploadIcon } from "lucide-react"
+import Link from "next/link"
+
+export default function SettingsPage() {
+  return (
+    <Page>
+      <SetHeader>
+        <h1 className="text-base font-medium">Settings</h1>
+      </SetHeader>
+
+      <div className="flex flex-col gap-8">
+        {/* Data Management */}
+        <section className="flex flex-col gap-3">
+          <div>
+            <h2 className="text-sm font-semibold">Data Management</h2>
+            <p className="text-sm text-muted-foreground">
+              Import transactions and keep dividend data up to date.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {/* Batch Import — links to sub-page */}
+            <Link href="/settings/import" className="group rounded-lg border p-4 transition-colors hover:bg-muted/50">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <UploadIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Batch Import</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      Paste a CSV to bulk-import transactions across any account.
+                      New accounts are created automatically when a matching name
+                      is not found.
+                    </p>
+                  </div>
+                </div>
+                <ArrowRightIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </div>
+            </Link>
+
+            {/* Refetch All Dividends — inline action */}
+            <div className="rounded-lg border p-4">
+              <div className="flex items-start gap-3">
+                <RefreshCwIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                <div className="flex flex-1 flex-col gap-3">
+                  <div>
+                    <p className="text-sm font-medium">Refetch All Dividends</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      Re-fetches dividends for every symbol in your portfolio and
+                      overwrites existing dividend transactions with the latest
+                      data. Use this when your share counts have changed due to
+                      new buys or sells.
+                    </p>
+                  </div>
+                  <ImportAllDividendsButton overwrite />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </Page>
+  )
+}

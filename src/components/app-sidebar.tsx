@@ -20,7 +20,6 @@ import {
   LineChartIcon,
   Settings2Icon,
   TrendingUpIcon,
-  UploadIcon,
   WalletIcon,
 } from "lucide-react"
 
@@ -54,13 +53,8 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Batch Import",
-      url: "/import",
-      icon: <UploadIcon />,
-    },
-    {
       title: "Settings",
-      url: "#",
+      url: "/settings",
       icon: <Settings2Icon />,
     },
     {

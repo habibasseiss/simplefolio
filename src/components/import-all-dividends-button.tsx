@@ -7,13 +7,13 @@ import { useRouter } from "next/navigation"
 import { useTransition } from "react"
 import { toast } from "sonner"
 
-export function ImportAllDividendsButton() {
+export function ImportAllDividendsButton({ overwrite = false }: { overwrite?: boolean }) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   function handleClick() {
     startTransition(async () => {
-      const result = await importAllDividendsAction()
+      const result = await importAllDividendsAction(overwrite)
       const hasInserts = result.inserted > 0
       const hasErrors = result.errors.length > 0
 
