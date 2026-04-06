@@ -5,6 +5,7 @@ import {
   updateTransactionSchema,
 } from "@/domain/transaction/transaction.schema";
 import { findAccountById } from "@/repositories/account.repository";
+import { upsertSymbol } from "@/repositories/symbol.repository";
 import {
   createTransaction,
   deleteTransaction,
@@ -45,6 +46,12 @@ export async function createTransactionAction(
   await assertAccountOwnership(accountId, userId);
   await createTransaction(accountId, parsed.data);
 
+  const symbolName = (formData.get("symbolName") as string | null)?.trim() ||
+    null;
+  if (symbolName) {
+    await upsertSymbol(parsed.data.symbol, symbolName, null);
+  }
+
   revalidatePath(`/accounts/${accountId}`);
   redirect(`/accounts/${accountId}`);
 }
@@ -71,6 +78,12 @@ export async function updateTransactionAction(
   const userId = await getDefaultUserId();
   await assertAccountOwnership(accountId, userId);
   await updateTransaction(txId, accountId, parsed.data);
+
+  const symbolName = (formData.get("symbolName") as string | null)?.trim() ||
+    null;
+  if (symbolName && parsed.data.symbol) {
+    await upsertSymbol(parsed.data.symbol, symbolName, null);
+  }
 
   revalidatePath(`/accounts/${accountId}`);
   redirect(`/accounts/${accountId}`);

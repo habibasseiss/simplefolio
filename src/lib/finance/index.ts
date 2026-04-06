@@ -6,6 +6,7 @@ export type {
   FinanceProvider,
   GlobalQuote,
   PriceCandle,
+  SymbolSearchResult,
 } from "./types";
 
 let provider: FinanceProvider | null = null;

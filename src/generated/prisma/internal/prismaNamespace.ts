@@ -387,7 +387,8 @@ export const ModelName = {
   User: 'User',
   Account: 'Account',
   Transaction: 'Transaction',
-  PriceHistory: 'PriceHistory'
+  PriceHistory: 'PriceHistory',
+  Symbol: 'Symbol'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -403,7 +404,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "transaction" | "priceHistory"
+    modelProps: "user" | "account" | "transaction" | "priceHistory" | "symbol"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -703,6 +704,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Symbol: {
+      payload: Prisma.$SymbolPayload<ExtArgs>
+      fields: Prisma.SymbolFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SymbolFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SymbolFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload>
+        }
+        findFirst: {
+          args: Prisma.SymbolFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SymbolFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload>
+        }
+        findMany: {
+          args: Prisma.SymbolFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload>[]
+        }
+        create: {
+          args: Prisma.SymbolCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload>
+        }
+        createMany: {
+          args: Prisma.SymbolCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SymbolCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload>[]
+        }
+        delete: {
+          args: Prisma.SymbolDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload>
+        }
+        update: {
+          args: Prisma.SymbolUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload>
+        }
+        deleteMany: {
+          args: Prisma.SymbolDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SymbolUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SymbolUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload>[]
+        }
+        upsert: {
+          args: Prisma.SymbolUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SymbolPayload>
+        }
+        aggregate: {
+          args: Prisma.SymbolAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSymbol>
+        }
+        groupBy: {
+          args: Prisma.SymbolGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SymbolGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SymbolCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SymbolCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -787,6 +862,15 @@ export const PriceHistoryScalarFieldEnum = {
 } as const
 
 export type PriceHistoryScalarFieldEnum = (typeof PriceHistoryScalarFieldEnum)[keyof typeof PriceHistoryScalarFieldEnum]
+
+
+export const SymbolScalarFieldEnum = {
+  ticker: 'ticker',
+  name: 'name',
+  exchange: 'exchange'
+} as const
+
+export type SymbolScalarFieldEnum = (typeof SymbolScalarFieldEnum)[keyof typeof SymbolScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -937,6 +1021,7 @@ export type GlobalOmitConfig = {
   account?: Prisma.AccountOmit
   transaction?: Prisma.TransactionOmit
   priceHistory?: Prisma.PriceHistoryOmit
+  symbol?: Prisma.SymbolOmit
 }
 
 /* Types for Logging */

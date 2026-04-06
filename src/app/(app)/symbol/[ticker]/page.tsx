@@ -24,6 +24,7 @@ import { getFinanceProvider } from "@/lib/finance"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
 import { computeSymbolChart } from "@/lib/portfolio"
 import { findPriceHistory } from "@/repositories/price-history.repository"
+import { findSymbol } from "@/repositories/symbol.repository"
 import { findTransactionsBySymbol } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
 import {
@@ -48,12 +49,13 @@ export default async function SymbolPage({
   const symbol = decodeURIComponent(ticker).toUpperCase()
   const userId = await getDefaultUserId()
 
-  const [allTransactions, quote, priceHistory] = await Promise.all([
+  const [allTransactions, quote, priceHistory, symbolRecord] = await Promise.all([
     findTransactionsBySymbol(userId, symbol),
     getFinanceProvider()
       .getGlobalQuote(symbol)
       .catch(() => null),
     findPriceHistory(symbol),
+    findSymbol(symbol),
   ])
 
   const fromDate = from ? new Date(from + "T00:00:00") : null
@@ -120,11 +122,13 @@ export default async function SymbolPage({
       <SetHeader back="/holdings">
         <div>
           <h1 className="text-base font-medium">{symbol}</h1>
-          {quote && (
+          {symbolRecord?.name ? (
+            <p className="text-xs text-muted-foreground">{symbolRecord.name}</p>
+          ) : quote ? (
             <p className="text-xs text-muted-foreground">
               {quote.latestTradingDay}
             </p>
-          )}
+          ) : null}
         </div>
       </SetHeader>
       <SetActions>

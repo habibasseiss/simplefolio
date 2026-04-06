@@ -27,6 +27,12 @@ export interface PriceCandle {
   currency: string;
 }
 
+export interface SymbolSearchResult {
+  ticker: string;
+  name: string | null;
+  exchange: string | null;
+}
+
 export interface FinanceProvider {
   getGlobalQuote(symbol: string): Promise<GlobalQuote | null>;
   getDividends(symbol: string): Promise<Dividend[]>;
@@ -36,4 +42,6 @@ export interface FinanceProvider {
    * so only missing weeks are fetched.
    */
   getHistoricalPrices(symbol: string, fromDate: Date): Promise<PriceCandle[]>;
+  /** Search for instruments by keyword. Returns up to 10 results. */
+  searchSymbols(query: string): Promise<SymbolSearchResult[]>;
 }

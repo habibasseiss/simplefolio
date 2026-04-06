@@ -4,6 +4,7 @@ import type {
   FinanceProvider,
   GlobalQuote,
   PriceCandle,
+  SymbolSearchResult,
 } from "../types";
 
 export class YahooFinanceProvider implements FinanceProvider {
@@ -94,6 +95,38 @@ export class YahooFinanceProvider implements FinanceProvider {
         `[YahooFinance] getHistoricalPrices error for ${symbol}:`,
         err,
       );
+      return [];
+    }
+  }
+
+  async searchSymbols(query: string): Promise<SymbolSearchResult[]> {
+    try {
+      const data = await this.yf.search(query);
+
+      return data.quotes
+        .filter(
+          (q) =>
+            "symbol" in q &&
+            q.symbol &&
+            q.quoteType !== "MUTUALFUND" &&
+            q.quoteType !== "FUTURE",
+        )
+        .slice(0, 10)
+        .map((q) => {
+          const typed = q as {
+            symbol: string;
+            shortname?: string;
+            longname?: string;
+            exchDisp?: string;
+          };
+          return {
+            ticker: typed.symbol,
+            name: typed.longname ?? typed.shortname ?? null,
+            exchange: typed.exchDisp ?? null,
+          };
+        });
+    } catch (err) {
+      console.error(`[YahooFinance] searchSymbols error for ${query}:`, err);
       return [];
     }
   }

@@ -55,3 +55,11 @@ model PriceHistory {
   @@unique([symbol, date])
   @@index([symbol])
 }
+
+// Cached instrument metadata from Yahoo Finance.
+// Populated whenever a user selects a symbol via the search combobox.
+model Symbol {
+  ticker   String  @id
+  name     String?
+  exchange String?
+}

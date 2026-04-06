@@ -1,6 +1,7 @@
 "use client"
 
 import type { ActionResult } from "@/actions/account.actions"
+import { SymbolCombobox } from "@/components/symbol-combobox"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,13 +56,7 @@ export function TransactionForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="symbol">Symbol / ISIN</Label>
-        <Input
-          id="symbol"
-          name="symbol"
-          placeholder="e.g. AAPL or US0378331005"
-          defaultValue={defaultValues?.symbol}
-          required
-        />
+        <SymbolCombobox defaultValue={defaultValues?.symbol} />
         {state.fieldErrors?.symbol && (
           <p className="text-sm text-destructive">
             {state.fieldErrors.symbol[0]}

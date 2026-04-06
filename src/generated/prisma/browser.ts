@@ -37,3 +37,8 @@ export type Transaction = Prisma.TransactionModel
  * 
  */
 export type PriceHistory = Prisma.PriceHistoryModel
+/**
+ * Model Symbol
+ * 
+ */
+export type Symbol = Prisma.SymbolModel

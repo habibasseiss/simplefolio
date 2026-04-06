@@ -1,6 +1,7 @@
 import { SetHeader } from "@/components/header-context"
 import { Page } from "@/components/page"
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
+import { findSymbolsByTickers } from "@/repositories/symbol.repository"
 import { findAllSymbols } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
 import { ArrowRightIcon, LayersIcon, TrendingUpIcon } from "lucide-react"
@@ -9,6 +10,8 @@ import Link from "next/link"
 export default async function HoldingsPage() {
   const userId = await getDefaultUserId()
   const symbols = await findAllSymbols(userId)
+  const symbolRows = await findSymbolsByTickers(symbols)
+  const symbolNameMap = new Map(symbolRows.map((s) => [s.ticker, s.name]))
 
   return (
     <Page>
@@ -46,8 +49,15 @@ export default async function HoldingsPage() {
               <Card className="h-full transition-colors hover:bg-muted/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{symbol}</CardTitle>
-                    <ArrowRightIcon className="size-4 text-muted-foreground" />
+                    <div>
+                      <CardTitle className="text-base">{symbol}</CardTitle>
+                      {symbolNameMap.get(symbol) && (
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {symbolNameMap.get(symbol)}
+                        </p>
+                      )}
+                    </div>
+                    <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
                   </div>
                 </CardHeader>
               </Card>
