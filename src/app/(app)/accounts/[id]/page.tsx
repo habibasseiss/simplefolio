@@ -1,6 +1,7 @@
 import { AccountTypeFilter } from "@/components/account-type-filter"
 import { SetActions, SetHeader } from "@/components/header-context"
 import { Page } from "@/components/page"
+import { PortfolioValueChart } from "@/components/portfolio-value-chart"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,7 +15,9 @@ import {
 import type { TransactionType } from "@/domain/transaction/transaction.types"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { formatCurrency, formatDate } from '@/lib/format'
+import { computeAccountChart } from "@/lib/portfolio"
 import { findAccountById } from "@/repositories/account.repository"
+import { findPriceHistory } from "@/repositories/price-history.repository"
 import { findTransactionsByAccountId } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
 import {
@@ -68,6 +71,12 @@ export default async function AccountDetailPage({
 
   if (!account) notFound()
 
+  // Fetch price history for each symbol in this account
+  const symbols = [...new Set(allTransactions.filter((tx) => tx.type === "BUY" || tx.type === "SELL").map((tx) => tx.symbol))]
+  const priceHistories = await Promise.all(symbols.map((s) => findPriceHistory(s)))
+  const priceHistoryMap = new Map(symbols.map((s, i) => [s, priceHistories[i]]))
+  const accountChartData = computeAccountChart(allTransactions, priceHistoryMap)
+
   const transactions =
     activeTypes && activeTypes.length > 0
       ? allTransactions.filter((tx) => activeTypes.includes(tx.type as TxType))
@@ -92,6 +101,14 @@ export default async function AccountDetailPage({
           </Link>
         </Button>
       </SetActions>
+
+      {accountChartData.length > 0 && (
+        <PortfolioValueChart
+          data={accountChartData}
+          description="Weekly account value vs cost basis"
+          currency={account.currency}
+        />
+      )}
 
       {transactions.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-16 text-center">

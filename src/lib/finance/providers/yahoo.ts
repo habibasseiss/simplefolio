@@ -1,5 +1,10 @@
 import YahooFinance from "yahoo-finance2";
-import type { Dividend, FinanceProvider, GlobalQuote } from "../types";
+import type {
+  Dividend,
+  FinanceProvider,
+  GlobalQuote,
+  PriceCandle,
+} from "../types";
 
 export class YahooFinanceProvider implements FinanceProvider {
   private readonly yf: InstanceType<typeof YahooFinance>;
@@ -60,6 +65,35 @@ export class YahooFinanceProvider implements FinanceProvider {
       });
     } catch (err) {
       console.error(`[YahooFinance] getDividends error for ${symbol}:`, err);
+      return [];
+    }
+  }
+
+  async getHistoricalPrices(
+    symbol: string,
+    fromDate: Date,
+  ): Promise<PriceCandle[]> {
+    try {
+      const data = await this.yf.chart(symbol, {
+        period1: fromDate,
+        interval: "1wk",
+        return: "array",
+      });
+
+      const currency = data.meta.currency ?? "USD";
+
+      return data.quotes
+        .filter((q) => q.adjclose != null)
+        .map((q) => ({
+          date: q.date.toISOString().split("T")[0],
+          close: q.adjclose as number,
+          currency,
+        }));
+    } catch (err) {
+      console.error(
+        `[YahooFinance] getHistoricalPrices error for ${symbol}:`,
+        err,
+      );
       return [];
     }
   }

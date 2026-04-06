@@ -1,7 +1,8 @@
 import { SetHeader } from "@/components/header-context"
 import { ImportAllDividendsButton } from "@/components/import-all-dividends-button"
 import { Page } from "@/components/page"
-import { ArrowRightIcon, RefreshCwIcon, UploadIcon } from "lucide-react"
+import { SyncPriceHistoryButton } from "@/components/sync-price-history-button"
+import { ArrowRightIcon, BarChart2Icon, RefreshCwIcon, UploadIcon } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -55,6 +56,22 @@ export default function SettingsPage() {
                     </p>
                   </div>
                   <ImportAllDividendsButton overwrite />
+                </div>
+              </div>
+            </div>
+
+            {/* Sync Price History — inline action */}
+            <div className="rounded-lg border p-4">
+              <div className="flex items-start gap-3">
+                <BarChart2Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                <div className="flex flex-1 flex-col gap-3">
+                  <div>
+                    <p className="text-sm font-medium">Sync Price History</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      Fetches weekly adjusted-close prices for every symbol in your portfolio. Only missing weeks are downloaded — run this once to backfill history and then periodically to extend it.
+                    </p>
+                  </div>
+                  <SyncPriceHistoryButton />
                 </div>
               </div>
             </div>

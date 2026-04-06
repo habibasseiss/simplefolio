@@ -1,13 +1,16 @@
 import { SetActions, SetHeader } from "@/components/header-context"
 import { ImportAllDividendsButton } from "@/components/import-all-dividends-button"
 import { Page } from "@/components/page"
+import { PortfolioValueChart } from "@/components/portfolio-value-chart"
 import { SymbolDateFilter } from "@/components/symbol-date-filter"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
-import { findAllTransactionsForUser } from "@/repositories/transaction.repository"
+import { computeOverallChart } from "@/lib/portfolio"
+import { findPriceHistory } from "@/repositories/price-history.repository"
+import { findAllSymbols, findAllTransactionsForUser } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
 import { MinusIcon, PlusIcon, TrendingUpIcon } from "lucide-react"
 import Link from "next/link"
@@ -20,7 +23,14 @@ export default async function AllHoldingsPage({
 }) {
   const { from, to } = await searchParams
   const userId = await getDefaultUserId()
-  const allTransactions = await findAllTransactionsForUser(userId)
+  const [allTransactions, symbols] = await Promise.all([
+    findAllTransactionsForUser(userId),
+    findAllSymbols(userId),
+  ])
+
+  // Fetch price history for every symbol in the portfolio
+  const priceHistories = await Promise.all(symbols.map((s) => findPriceHistory(s)))
+  const priceHistoryMap = new Map(symbols.map((s, i) => [s, priceHistories[i]]))
 
   const fromDate = from ? new Date(from + "T00:00:00") : null
   const toDate = to ? new Date(to + "T23:59:59.999") : null
@@ -49,6 +59,20 @@ export default async function AllHoldingsPage({
     0,
   )
   const hasDividendTax = totalDividendTaxPaid > 0
+
+  // Filter price history rows to the selected period before charting.
+  // Transactions stay unfiltered so share counts at each week are correct.
+  const filteredPriceHistoryMap = new Map(
+    [...priceHistoryMap.entries()].map(([symbol, rows]) => [
+      symbol,
+      rows.filter((row) => {
+        if (fromDate && row.date < fromDate) return false
+        if (toDate && row.date > toDate) return false
+        return true
+      }),
+    ]),
+  )
+  const overallChartData = computeOverallChart(allTransactions, filteredPriceHistoryMap)
 
   return (
     <Page>
@@ -90,6 +114,13 @@ export default async function AllHoldingsPage({
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {overallChartData.length > 0 && (
+        <PortfolioValueChart
+          data={overallChartData}
+          description="Weekly total portfolio value vs cost basis"
+        />
       )}
 
       {transactions.length === 0 ? (

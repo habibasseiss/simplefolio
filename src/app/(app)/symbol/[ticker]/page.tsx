@@ -1,6 +1,7 @@
 import { SetActions, SetHeader } from "@/components/header-context"
 import { ImportDividendsButton } from "@/components/import-dividends-button"
 import { Page } from "@/components/page"
+import { PortfolioValueChart } from "@/components/portfolio-value-chart"
 import { SymbolDateFilter } from "@/components/symbol-date-filter"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
 import {
@@ -21,6 +22,8 @@ import {
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { getFinanceProvider } from "@/lib/finance"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
+import { computeSymbolChart } from "@/lib/portfolio"
+import { findPriceHistory } from "@/repositories/price-history.repository"
 import { findTransactionsBySymbol } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
 import {
@@ -45,11 +48,12 @@ export default async function SymbolPage({
   const symbol = decodeURIComponent(ticker).toUpperCase()
   const userId = await getDefaultUserId()
 
-  const [allTransactions, quote] = await Promise.all([
+  const [allTransactions, quote, priceHistory] = await Promise.all([
     findTransactionsBySymbol(userId, symbol),
     getFinanceProvider()
       .getGlobalQuote(symbol)
       .catch(() => null),
+    findPriceHistory(symbol),
   ])
 
   const fromDate = from ? new Date(from + "T00:00:00") : null
@@ -100,6 +104,16 @@ export default async function SymbolPage({
     0,
   )
   const hasDividendTax = totalDividendTaxPaid > 0
+
+  // Chart data: weeks are filtered to the selected period, but position is computed
+  // from all historical transactions (shares held at each week need full history).
+  const filteredPriceHistory = priceHistory.filter((row) => {
+    if (fromDate && row.date < fromDate) return false
+    if (toDate && row.date > toDate) return false
+    return true
+  })
+  const symbolChartData = computeSymbolChart(allTransactions, filteredPriceHistory)
+  const chartCurrency = priceHistory[0]?.currency ?? "USD"
 
   return (
     <Page>
@@ -248,6 +262,14 @@ export default async function SymbolPage({
           </Card>
         )}
       </div>
+
+      {symbolChartData.length > 0 && (
+        <PortfolioValueChart
+          data={symbolChartData}
+          description="Weekly position value vs cost basis"
+          currency={chartCurrency}
+        />
+      )}
 
       {transactions.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-16 text-center">

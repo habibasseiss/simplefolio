@@ -11,4 +11,5 @@
 export type * from './models/User'
 export type * from './models/Account'
 export type * from './models/Transaction'
+export type * from './models/PriceHistory'
 export type * from './commonInputTypes'

@@ -42,3 +42,16 @@ model Transaction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// Weekly adjusted-close prices fetched from Yahoo Finance.
+// One row per (symbol, week). Synced incrementally — only missing weeks are fetched.
+model PriceHistory {
+  id       String   @id @default(cuid())
+  symbol   String
+  date     DateTime // Monday midnight UTC (week start)
+  close    Float    // Split-adjusted close (adjclose from Yahoo)
+  currency String
+
+  @@unique([symbol, date])
+  @@index([symbol])
+}

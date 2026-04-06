@@ -56,3 +56,8 @@ export type Account = Prisma.AccountModel
  * 
  */
 export type Transaction = Prisma.TransactionModel
+/**
+ * Model PriceHistory
+ * 
+ */
+export type PriceHistory = Prisma.PriceHistoryModel
