@@ -5,7 +5,6 @@ import {
   Dispatch,
   SetStateAction,
   useContext,
-  useEffect,
   useLayoutEffect,
   useState,
 } from "react"
@@ -38,23 +37,21 @@ export function useHeaderContext() {
 function useSetHeader(patch: HeaderContent) {
   const setContent = useContext(HeaderSetContext)
 
-  const useIsomorphicEffect =
-    typeof window !== "undefined" ? useLayoutEffect : useEffect
-
-  useIsomorphicEffect(() => {
+  // Single useLayoutEffect owns both setup and cleanup so they're always in sync.
+  // No deps array: re-runs after every render, cleanup runs before the next effect.
+  // useLayoutEffect fires before browser paint, so the header is never visibly empty.
+  useLayoutEffect(() => {
     setContent((prev) => ({ ...prev, ...patch }))
+    return () => {
+      setContent((prev) => {
+        const next = { ...prev }
+        for (const key of Object.keys(patch) as (keyof HeaderContent)[]) {
+          delete next[key]
+        }
+        return next
+      })
+    }
   })
-
-  useEffect(() => {
-    return () => setContent((prev) => {
-      const next = { ...prev }
-      for (const key of Object.keys(patch) as (keyof HeaderContent)[]) {
-        delete next[key]
-      }
-      return next
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setContent])
 }
 
 export function SetHeader({ children, back }: { children?: React.ReactNode; back?: string }) {

@@ -1,7 +1,10 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import { HeaderProvider } from "@/components/header-context"
-import { SiteHeader } from "@/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar";
+import { HeaderProvider } from "@/components/header-context";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+
+// All pages in this group query the database — disable static prerendering.
+export const dynamic = "force-dynamic";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (

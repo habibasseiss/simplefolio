@@ -1038,6 +1038,7 @@ export type PriceHistoryCreateManyArgs<ExtArgs extends runtime.Types.Extensions.
    * The data used to create many PriceHistories.
    */
   data: Prisma.PriceHistoryCreateManyInput | Prisma.PriceHistoryCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1056,6 +1057,7 @@ export type PriceHistoryCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Ex
    * The data used to create many PriceHistories.
    */
   data: Prisma.PriceHistoryCreateManyInput | Prisma.PriceHistoryCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

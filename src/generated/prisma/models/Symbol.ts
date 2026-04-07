@@ -932,6 +932,7 @@ export type SymbolCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * The data used to create many Symbols.
    */
   data: Prisma.SymbolCreateManyInput | Prisma.SymbolCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -950,6 +951,7 @@ export type SymbolCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensio
    * The data used to create many Symbols.
    */
   data: Prisma.SymbolCreateManyInput | Prisma.SymbolCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
