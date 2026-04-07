@@ -99,6 +99,17 @@ export class YahooFinanceProvider implements FinanceProvider {
     }
   }
 
+  async getExchangeRate(from: string, to: string): Promise<number> {
+    if (from === to) return 1;
+    try {
+      const quote = await this.yf.quote(`${from}${to}=X`);
+      return quote.regularMarketPrice ?? 1;
+    } catch (err) {
+      console.error(`[YahooFinance] getExchangeRate ${from}→${to}:`, err);
+      return 1; // fallback: treat as same currency
+    }
+  }
+
   async searchSymbols(query: string): Promise<SymbolSearchResult[]> {
     try {
       const data = await this.yf.search(query);

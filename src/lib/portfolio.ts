@@ -13,6 +13,8 @@ export type PortfolioTx = {
   quantity: number;
   unitPrice: number;
   fee: number;
+  /** ISO 4217 currency of the transaction's account. Used for FX conversion. */
+  accountCurrency?: string;
 };
 
 export interface ChartPoint {
@@ -50,11 +52,14 @@ function sharesAt(
 /**
  * Computes the running cost basis for a single symbol up to `upToDate`.
  * BUY adds (qty * unitPrice + fee), SELL subtracts proportionally.
+ * When `fxRates` is provided, each transaction's cost is converted to the
+ * target currency using `tx.accountCurrency` (falls back to 1× if unknown).
  */
 function costAt(
   txs: PortfolioTx[],
   symbol: string,
   upToDate: Date,
+  fxRates?: Map<string, number>,
 ): number {
   let totalShares = 0;
   let totalCost = 0;
@@ -67,11 +72,12 @@ function costAt(
     ) {
       continue;
     }
+    const txFx = fxRates?.get(tx.accountCurrency ?? "USD") ?? 1;
     if (tx.type === "BUY") {
-      totalCost += tx.quantity * tx.unitPrice + tx.fee;
+      totalCost += (tx.quantity * tx.unitPrice + tx.fee) * txFx;
       totalShares += tx.quantity;
     } else {
-      // Proportional cost reduction on sell
+      // Proportional cost reduction on sell (cost already in converted units)
       const avgCost = totalShares > 0 ? totalCost / totalShares : 0;
       totalCost -= tx.quantity * avgCost;
       totalShares -= tx.quantity;
@@ -115,16 +121,18 @@ export function computeSymbolChart(
 
 /**
  * Builds a weekly chart series for an account.
- * All symbols in the account are summed (in their native currencies — no FX conversion).
  *
  * @param transactions - All BUY/SELL transactions belonging to this account.
  * @param priceHistoryMap - Map of symbol → sorted-ascending candles.
+ * @param fxRates - Optional map of currency → rate-to-target. When provided,
+ *   both close prices and cost basis are converted to the target currency.
  */
 export function computeAccountChart(
   transactions: PortfolioTx[],
   priceHistoryMap: Map<string, PriceHistoryRow[]>,
+  fxRates?: Map<string, number>,
 ): ChartPoint[] {
-  return computePortfolioChart(transactions, priceHistoryMap);
+  return computePortfolioChart(transactions, priceHistoryMap, fxRates);
 }
 
 /**
@@ -133,12 +141,15 @@ export function computeAccountChart(
  *
  * @param transactions - All BUY/SELL transactions for the user.
  * @param priceHistoryMap - Map of symbol → sorted-ascending candles.
+ * @param fxRates - Optional map of currency → rate-to-target. When provided,
+ *   both close prices and cost basis are converted to the target currency.
  */
 export function computeOverallChart(
   transactions: PortfolioTx[],
   priceHistoryMap: Map<string, PriceHistoryRow[]>,
+  fxRates?: Map<string, number>,
 ): ChartPoint[] {
-  return computePortfolioChart(transactions, priceHistoryMap);
+  return computePortfolioChart(transactions, priceHistoryMap, fxRates);
 }
 
 /**
@@ -148,6 +159,7 @@ export function computeOverallChart(
 function computePortfolioChart(
   transactions: PortfolioTx[],
   priceHistoryMap: Map<string, PriceHistoryRow[]>,
+  fxRates?: Map<string, number>,
 ): ChartPoint[] {
   const symbols = [...priceHistoryMap.keys()];
   if (symbols.length === 0) return [];
@@ -178,9 +190,10 @@ function computePortfolioChart(
 
       const symbolTxs = transactions.filter((tx) => tx.symbol === symbol);
       const shares = sharesAt(symbolTxs, symbol, weekEnd);
-      const cost = costAt(symbolTxs, symbol, weekEnd);
+      const cost = costAt(symbolTxs, symbol, weekEnd, fxRates);
+      const priceFx = fxRates?.get(row.currency) ?? 1;
 
-      totalValue += shares * row.close;
+      totalValue += shares * row.close * priceFx;
       totalCost += cost;
     }
 

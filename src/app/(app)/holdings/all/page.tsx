@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
+import { getRatesTo } from "@/lib/fx"
 import { computeOverallChart } from "@/lib/portfolio"
 import { findPriceHistory } from "@/repositories/price-history.repository"
 import { findAllSymbols, findAllTransactionsForUser } from "@/repositories/transaction.repository"
@@ -31,6 +32,16 @@ export default async function AllHoldingsPage({
   // Fetch price history for every symbol in the portfolio
   const priceHistories = await Promise.all(symbols.map((s) => findPriceHistory(s)))
   const priceHistoryMap = new Map(symbols.map((s, i) => [s, priceHistories[i]]))
+
+  // FX rates cached 24 h — convert all price + account currencies to USD
+  const priceCurrencies = symbols.map((s) => priceHistoryMap.get(s)?.at(-1)?.currency ?? "USD")
+  const accountCurrencies = allTransactions.map((tx) => tx.account.currency)
+  const fxRates = await getRatesTo([...priceCurrencies, ...accountCurrencies], "USD")
+
+  const txsWithCurrency = allTransactions.map((tx) => ({
+    ...tx,
+    accountCurrency: tx.account.currency,
+  }))
 
   const fromDate = from ? new Date(from + "T00:00:00") : null
   const toDate = to ? new Date(to + "T23:59:59.999") : null
@@ -72,7 +83,7 @@ export default async function AllHoldingsPage({
       }),
     ]),
   )
-  const overallChartData = computeOverallChart(allTransactions, filteredPriceHistoryMap)
+  const overallChartData = computeOverallChart(txsWithCurrency, filteredPriceHistoryMap, fxRates)
 
   return (
     <Page>

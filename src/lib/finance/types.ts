@@ -44,4 +44,9 @@ export interface FinanceProvider {
   getHistoricalPrices(symbol: string, fromDate: Date): Promise<PriceCandle[]>;
   /** Search for instruments by keyword. Returns up to 10 results. */
   searchSymbols(query: string): Promise<SymbolSearchResult[]>;
+  /**
+   * Returns the exchange rate to convert 1 unit of `from` into `to`.
+   * E.g. getExchangeRate("EUR", "USD") ≈ 1.08
+   */
+  getExchangeRate(from: string, to: string): Promise<number>;
 }

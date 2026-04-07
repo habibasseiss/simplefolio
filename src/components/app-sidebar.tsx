@@ -15,12 +15,11 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import {
-  CircleHelpIcon,
   LayoutDashboardIcon,
   LineChartIcon,
   Settings2Icon,
   TrendingUpIcon,
-  WalletIcon,
+  WalletIcon
 } from "lucide-react"
 
 const data = {
@@ -45,22 +44,12 @@ const data = {
       url: "/holdings",
       icon: <LineChartIcon />,
     },
-    {
-      title: "Portfolio",
-      url: "/portfolio",
-      icon: <TrendingUpIcon />,
-    },
   ],
   navSecondary: [
     {
       title: "Settings",
       url: "/settings",
       icon: <Settings2Icon />,
-    },
-    {
-      title: "Help",
-      url: "#",
-      icon: <CircleHelpIcon />,
     },
   ],
 }
