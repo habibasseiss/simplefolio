@@ -2,6 +2,7 @@ import { SetActions, SetHeader } from "@/components/header-context"
 import { ImportDividendsButton } from "@/components/import-dividends-button"
 import { Page } from "@/components/page"
 import { PortfolioValueChart } from "@/components/portfolio-value-chart"
+import { SymbolAccountFilter } from "@/components/symbol-account-filter"
 import { SymbolDateFilter } from "@/components/symbol-date-filter"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
 import {
@@ -42,10 +43,10 @@ export default async function SymbolPage({
   searchParams,
 }: {
   params: Promise<{ ticker: string }>
-  searchParams: Promise<{ from?: string; to?: string }>
+  searchParams: Promise<{ from?: string; to?: string; accounts?: string }>
 }) {
   const { ticker } = await params
-  const { from, to } = await searchParams
+  const { from, to, accounts } = await searchParams
   const symbol = decodeURIComponent(ticker).toUpperCase()
   const userId = await getDefaultUserId()
 
@@ -58,27 +59,37 @@ export default async function SymbolPage({
     findSymbol(symbol),
   ])
 
+  const selectedAccountIds = accounts ? accounts.split(",") : null
+
+  const filteredAllTransactions = selectedAccountIds
+    ? allTransactions.filter((tx) => selectedAccountIds.includes(tx.accountId))
+    : allTransactions
+
   const fromDate = from ? new Date(from + "T00:00:00") : null
   const toDate = to ? new Date(to + "T23:59:59.999") : null
 
   const transactions =
     fromDate || toDate
-      ? allTransactions.filter((tx) => {
+      ? filteredAllTransactions.filter((tx) => {
         const d = new Date(tx.date)
         if (fromDate && d < fromDate) return false
         if (toDate && d > toDate) return false
         return true
       })
-      : allTransactions
+      : filteredAllTransactions
+
+  const availableAccounts = Array.from(
+    new Map(allTransactions.map((tx) => [tx.account.id, tx.account])).values(),
+  ).sort((a, b) => a.name.localeCompare(b.name))
 
   // Position is always computed from ALL transactions — it's a cumulative running total
-  const totalShares = allTransactions.reduce((acc, tx) => {
+  const totalShares = filteredAllTransactions.reduce((acc, tx) => {
     if (tx.type === "BUY") return acc + tx.quantity
     if (tx.type === "SELL") return acc - tx.quantity
     return acc
   }, 0)
 
-  const totalCost = allTransactions.reduce((acc, tx) => {
+  const totalCost = filteredAllTransactions.reduce((acc, tx) => {
     if (tx.type === "BUY") return acc + calcTransactionTotal(tx)
     if (tx.type === "SELL") return acc - calcTransactionTotal(tx)
     return acc
@@ -114,7 +125,7 @@ export default async function SymbolPage({
     if (toDate && row.date > toDate) return false
     return true
   })
-  const symbolChartData = computeSymbolChart(allTransactions, filteredPriceHistory)
+  const symbolChartData = computeSymbolChart(filteredAllTransactions, filteredPriceHistory)
   const chartCurrency = priceHistory[0]?.currency ?? "USD"
 
   return (
@@ -133,7 +144,15 @@ export default async function SymbolPage({
       </SetHeader>
       <SetActions>
         <Suspense>
-          <SymbolDateFilter from={from} to={to} />
+          <div className="flex items-center gap-2">
+            {availableAccounts.length > 1 && (
+              <SymbolAccountFilter
+                accounts={availableAccounts}
+                selectedAccountIds={selectedAccountIds ?? undefined}
+              />
+            )}
+            <SymbolDateFilter from={from} to={to} />
+          </div>
         </Suspense>
         <ImportDividendsButton symbol={symbol} />
       </SetActions>
