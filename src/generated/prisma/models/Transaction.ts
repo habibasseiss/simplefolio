@@ -50,6 +50,7 @@ export type TransactionMinAggregateOutputType = {
   fee: number | null
   nraTax: number | null
   notes: string | null
+  reinvestDividends: boolean | null
   accountId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -65,6 +66,7 @@ export type TransactionMaxAggregateOutputType = {
   fee: number | null
   nraTax: number | null
   notes: string | null
+  reinvestDividends: boolean | null
   accountId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -80,6 +82,7 @@ export type TransactionCountAggregateOutputType = {
   fee: number
   nraTax: number
   notes: number
+  reinvestDividends: number
   accountId: number
   createdAt: number
   updatedAt: number
@@ -111,6 +114,7 @@ export type TransactionMinAggregateInputType = {
   fee?: true
   nraTax?: true
   notes?: true
+  reinvestDividends?: true
   accountId?: true
   createdAt?: true
   updatedAt?: true
@@ -126,6 +130,7 @@ export type TransactionMaxAggregateInputType = {
   fee?: true
   nraTax?: true
   notes?: true
+  reinvestDividends?: true
   accountId?: true
   createdAt?: true
   updatedAt?: true
@@ -141,6 +146,7 @@ export type TransactionCountAggregateInputType = {
   fee?: true
   nraTax?: true
   notes?: true
+  reinvestDividends?: true
   accountId?: true
   createdAt?: true
   updatedAt?: true
@@ -243,6 +249,7 @@ export type TransactionGroupByOutputType = {
   fee: number
   nraTax: number | null
   notes: string | null
+  reinvestDividends: boolean
   accountId: string
   createdAt: Date
   updatedAt: Date
@@ -281,6 +288,7 @@ export type TransactionWhereInput = {
   fee?: Prisma.FloatFilter<"Transaction"> | number
   nraTax?: Prisma.FloatNullableFilter<"Transaction"> | number | null
   notes?: Prisma.StringNullableFilter<"Transaction"> | string | null
+  reinvestDividends?: Prisma.BoolFilter<"Transaction"> | boolean
   accountId?: Prisma.StringFilter<"Transaction"> | string
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
@@ -297,6 +305,7 @@ export type TransactionOrderByWithRelationInput = {
   fee?: Prisma.SortOrder
   nraTax?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  reinvestDividends?: Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -316,6 +325,7 @@ export type TransactionWhereUniqueInput = Prisma.AtLeast<{
   fee?: Prisma.FloatFilter<"Transaction"> | number
   nraTax?: Prisma.FloatNullableFilter<"Transaction"> | number | null
   notes?: Prisma.StringNullableFilter<"Transaction"> | string | null
+  reinvestDividends?: Prisma.BoolFilter<"Transaction"> | boolean
   accountId?: Prisma.StringFilter<"Transaction"> | string
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
@@ -332,6 +342,7 @@ export type TransactionOrderByWithAggregationInput = {
   fee?: Prisma.SortOrder
   nraTax?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  reinvestDividends?: Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -355,6 +366,7 @@ export type TransactionScalarWhereWithAggregatesInput = {
   fee?: Prisma.FloatWithAggregatesFilter<"Transaction"> | number
   nraTax?: Prisma.FloatNullableWithAggregatesFilter<"Transaction"> | number | null
   notes?: Prisma.StringNullableWithAggregatesFilter<"Transaction"> | string | null
+  reinvestDividends?: Prisma.BoolWithAggregatesFilter<"Transaction"> | boolean
   accountId?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Transaction"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Transaction"> | Date | string
@@ -370,6 +382,7 @@ export type TransactionCreateInput = {
   fee?: number
   nraTax?: number | null
   notes?: string | null
+  reinvestDividends?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   account: Prisma.AccountCreateNestedOneWithoutTransactionsInput
@@ -385,6 +398,7 @@ export type TransactionUncheckedCreateInput = {
   fee?: number
   nraTax?: number | null
   notes?: string | null
+  reinvestDividends?: boolean
   accountId: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -400,6 +414,7 @@ export type TransactionUpdateInput = {
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
   nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reinvestDividends?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   account?: Prisma.AccountUpdateOneRequiredWithoutTransactionsNestedInput
@@ -415,6 +430,7 @@ export type TransactionUncheckedUpdateInput = {
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
   nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reinvestDividends?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accountId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -430,6 +446,7 @@ export type TransactionCreateManyInput = {
   fee?: number
   nraTax?: number | null
   notes?: string | null
+  reinvestDividends?: boolean
   accountId: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -445,6 +462,7 @@ export type TransactionUpdateManyMutationInput = {
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
   nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reinvestDividends?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -459,6 +477,7 @@ export type TransactionUncheckedUpdateManyInput = {
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
   nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reinvestDividends?: Prisma.BoolFieldUpdateOperationsInput | boolean
   accountId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -484,6 +503,7 @@ export type TransactionCountOrderByAggregateInput = {
   fee?: Prisma.SortOrder
   nraTax?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  reinvestDividends?: Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -506,6 +526,7 @@ export type TransactionMaxOrderByAggregateInput = {
   fee?: Prisma.SortOrder
   nraTax?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  reinvestDividends?: Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -521,6 +542,7 @@ export type TransactionMinOrderByAggregateInput = {
   fee?: Prisma.SortOrder
   nraTax?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  reinvestDividends?: Prisma.SortOrder
   accountId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -595,6 +617,10 @@ export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }
 
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
 export type TransactionCreateWithoutAccountInput = {
   id?: string
   type: string
@@ -605,6 +631,7 @@ export type TransactionCreateWithoutAccountInput = {
   fee?: number
   nraTax?: number | null
   notes?: string | null
+  reinvestDividends?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -619,6 +646,7 @@ export type TransactionUncheckedCreateWithoutAccountInput = {
   fee?: number
   nraTax?: number | null
   notes?: string | null
+  reinvestDividends?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -662,6 +690,7 @@ export type TransactionScalarWhereInput = {
   fee?: Prisma.FloatFilter<"Transaction"> | number
   nraTax?: Prisma.FloatNullableFilter<"Transaction"> | number | null
   notes?: Prisma.StringNullableFilter<"Transaction"> | string | null
+  reinvestDividends?: Prisma.BoolFilter<"Transaction"> | boolean
   accountId?: Prisma.StringFilter<"Transaction"> | string
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
@@ -677,6 +706,7 @@ export type TransactionCreateManyAccountInput = {
   fee?: number
   nraTax?: number | null
   notes?: string | null
+  reinvestDividends?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -691,6 +721,7 @@ export type TransactionUpdateWithoutAccountInput = {
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
   nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reinvestDividends?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -705,6 +736,7 @@ export type TransactionUncheckedUpdateWithoutAccountInput = {
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
   nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reinvestDividends?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -719,6 +751,7 @@ export type TransactionUncheckedUpdateManyWithoutAccountInput = {
   fee?: Prisma.FloatFieldUpdateOperationsInput | number
   nraTax?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reinvestDividends?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -735,6 +768,7 @@ export type TransactionSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   fee?: boolean
   nraTax?: boolean
   notes?: boolean
+  reinvestDividends?: boolean
   accountId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -751,6 +785,7 @@ export type TransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   fee?: boolean
   nraTax?: boolean
   notes?: boolean
+  reinvestDividends?: boolean
   accountId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -767,6 +802,7 @@ export type TransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   fee?: boolean
   nraTax?: boolean
   notes?: boolean
+  reinvestDividends?: boolean
   accountId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -783,12 +819,13 @@ export type TransactionSelectScalar = {
   fee?: boolean
   nraTax?: boolean
   notes?: boolean
+  reinvestDividends?: boolean
   accountId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "symbol" | "date" | "quantity" | "unitPrice" | "fee" | "nraTax" | "notes" | "accountId" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
+export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "symbol" | "date" | "quantity" | "unitPrice" | "fee" | "nraTax" | "notes" | "reinvestDividends" | "accountId" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
 export type TransactionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   account?: boolean | Prisma.AccountDefaultArgs<ExtArgs>
 }
@@ -814,6 +851,7 @@ export type $TransactionPayload<ExtArgs extends runtime.Types.Extensions.Interna
     fee: number
     nraTax: number | null
     notes: string | null
+    reinvestDividends: boolean
     accountId: string
     createdAt: Date
     updatedAt: Date
@@ -1250,6 +1288,7 @@ export interface TransactionFieldRefs {
   readonly fee: Prisma.FieldRef<"Transaction", 'Float'>
   readonly nraTax: Prisma.FieldRef<"Transaction", 'Float'>
   readonly notes: Prisma.FieldRef<"Transaction", 'String'>
+  readonly reinvestDividends: Prisma.FieldRef<"Transaction", 'Boolean'>
   readonly accountId: Prisma.FieldRef<"Transaction", 'String'>
   readonly createdAt: Prisma.FieldRef<"Transaction", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Transaction", 'DateTime'>

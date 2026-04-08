@@ -10,6 +10,7 @@ export const createTransactionSchema = z.object({
   fee: z.coerce.number().min(0, "Fee cannot be negative").default(0),
   nraTax: z.number().min(0).max(1).nullable().optional(),
   notes: z.string().max(500).optional(),
+  reinvestDividends: z.boolean().default(false),
 });
 
 export const updateTransactionSchema = createTransactionSchema.partial();

@@ -342,8 +342,7 @@ export default async function SymbolPage({
                           {formatCurrency(total, tx.account.currency)}
                         </span>
                       ) : tx.type === "DIVIDEND" ? (
-                        <span className="flex items-center justify-end gap-1 text-blue-400 dark:text-blue-600">
-                          <PlusIcon className="size-3" />
+                        <span className="flex items-center justify-end gap-1 text-gray-400 dark:text-gray-600">
                           {formatCurrency(total, tx.account.currency)}
                         </span>
                       ) : (

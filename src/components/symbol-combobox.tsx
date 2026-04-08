@@ -23,11 +23,14 @@ export function SymbolCombobox({
   const [selectedName, setSelectedName] = useState(defaultName);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Only search after the user has interacted with the input
+  const isDirtyRef = useRef(false);
 
   // Derive open state from results — avoids synchronous setState in effects
   const isOpen = results.length > 0;
 
   useEffect(() => {
+    if (!isDirtyRef.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(async () => {
@@ -79,6 +82,7 @@ export function SymbolCombobox({
         name="symbol"
         value={query}
         onChange={(e) => {
+          isDirtyRef.current = true;
           setQuery(e.target.value.toUpperCase());
           setSelectedName("");
         }}

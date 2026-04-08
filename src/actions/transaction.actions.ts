@@ -4,6 +4,7 @@ import {
   createTransactionSchema,
   updateTransactionSchema,
 } from "@/domain/transaction/transaction.schema";
+import { getFinanceProvider } from "@/lib/finance";
 import { findAccountById } from "@/repositories/account.repository";
 import { upsertSymbol } from "@/repositories/symbol.repository";
 import {
@@ -33,10 +34,12 @@ export async function createTransactionAction(
   const nraTax = applyNraTax && process.env.NRA_TAX
     ? parseFloat(process.env.NRA_TAX)
     : null;
+  const reinvestDividends = formData.get("reinvestDividends") === "on";
 
   const parsed = createTransactionSchema.safeParse({
     ...Object.fromEntries(formData),
     nraTax,
+    reinvestDividends,
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -46,11 +49,10 @@ export async function createTransactionAction(
   await assertAccountOwnership(accountId, userId);
   await createTransaction(accountId, parsed.data);
 
-  const symbolName = (formData.get("symbolName") as string | null)?.trim() ||
-    null;
-  if (symbolName) {
-    await upsertSymbol(parsed.data.symbol, symbolName, null);
-  }
+  const { name, exchange } = await getFinanceProvider().getSymbolInfo(
+    parsed.data.symbol,
+  );
+  await upsertSymbol(parsed.data.symbol, name, exchange);
 
   revalidatePath(`/accounts/${accountId}`);
   redirect(`/accounts/${accountId}`);
@@ -66,10 +68,12 @@ export async function updateTransactionAction(
   const nraTax = applyNraTax && process.env.NRA_TAX
     ? parseFloat(process.env.NRA_TAX)
     : null;
+  const reinvestDividends = formData.get("reinvestDividends") === "on";
 
   const parsed = updateTransactionSchema.safeParse({
     ...Object.fromEntries(formData),
     nraTax,
+    reinvestDividends,
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -79,10 +83,11 @@ export async function updateTransactionAction(
   await assertAccountOwnership(accountId, userId);
   await updateTransaction(txId, accountId, parsed.data);
 
-  const symbolName = (formData.get("symbolName") as string | null)?.trim() ||
-    null;
-  if (symbolName && parsed.data.symbol) {
-    await upsertSymbol(parsed.data.symbol, symbolName, null);
+  if (parsed.data.symbol) {
+    const { name, exchange } = await getFinanceProvider().getSymbolInfo(
+      parsed.data.symbol,
+    );
+    await upsertSymbol(parsed.data.symbol, name, exchange);
   }
 
   revalidatePath(`/accounts/${accountId}`);

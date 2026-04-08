@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle2Icon, Loader2Icon, UploadIcon, XCircleIcon } from "lucide-react"
 import { useRef, useState, useTransition } from "react"
 
-const EXAMPLE_CSV = `type,symbol,date,quantity,currency,unitPrice,fee,nraTax,account
-BUY,VT,2025-11-17,7.19580283,USD,138.9699,0.0,,Schwab`
+const EXAMPLE_CSV = `type,symbol,date,quantity,currency,unitPrice,fee,nraTax,account,reinvestDividends
+BUY,VT,2025-11-17,7.19580283,USD,138.9699,0.0,,Schwab,true`
 
 export default function BatchImportPage() {
   const [result, setResult] = useState<BatchImportResult | null>(null)

@@ -149,6 +149,19 @@ export function TransactionForm({
         </div>
       )}
 
+      {selectedType === "BUY" && (
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="reinvestDividends"
+            name="reinvestDividends"
+            className="size-4 rounded border-input accent-primary"
+            defaultChecked={defaultValues?.reinvestDividends ?? false}
+          />
+          <Label htmlFor="reinvestDividends">Reinvest dividends (DRIP)</Label>
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         <Label htmlFor="notes">Notes (optional)</Label>
         <Input

@@ -9,6 +9,7 @@ export function TransactionTypeBadge({ type }: { type: string }) {
     BUY: { label: "Buy", variant: "default" },
     SELL: { label: "Sell", variant: "destructive" },
     DIVIDEND: { label: "Dividend", variant: "secondary" },
+    AUTO_BUY: { label: "DRIP", variant: "secondary" },
   }
   const config = variants[type as TransactionType] ?? {
     label: type,

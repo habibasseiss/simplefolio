@@ -49,4 +49,8 @@ export interface FinanceProvider {
    * E.g. getExchangeRate("EUR", "USD") ≈ 1.08
    */
   getExchangeRate(from: string, to: string): Promise<number>;
+  /** Returns the human-readable name and exchange for a given ticker. */
+  getSymbolInfo(
+    ticker: string,
+  ): Promise<{ name: string | null; exchange: string | null }>;
 }

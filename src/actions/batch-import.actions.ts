@@ -1,12 +1,19 @@
 "use server";
 
-import { createTransactionSchema } from "@/domain/transaction/transaction.schema";
+import {
+  type CreateTransactionInput,
+  createTransactionSchema,
+} from "@/domain/transaction/transaction.schema";
+import { ALL_TRANSACTION_TYPES } from "@/domain/transaction/transaction.types";
+import { getFinanceProvider } from "@/lib/finance";
 import {
   createAccount,
   findAccountByName,
 } from "@/repositories/account.repository";
+import { upsertSymbol } from "@/repositories/symbol.repository";
 import { createTransaction } from "@/repositories/transaction.repository";
 import { getDefaultUserId } from "@/repositories/user.repository";
+import { z } from "zod";
 
 export type RowResult =
   | {
@@ -24,6 +31,11 @@ export type BatchImportResult = {
   failed: number;
 };
 
+// Extends the user-facing schema to also accept AUTO_BUY, which can appear in CSV imports.
+const batchImportTransactionSchema = createTransactionSchema.extend({
+  type: z.enum(ALL_TRANSACTION_TYPES),
+});
+
 const CSV_HEADER = [
   "type",
   "symbol",
@@ -34,6 +46,7 @@ const CSV_HEADER = [
   "fee",
   "nratax",
   "account",
+  "reinvestdividends",
 ];
 
 function parseCSV(csv: string): { headers: string[]; rows: string[][] } {
@@ -52,7 +65,7 @@ export async function batchImportAction(
 
   // Validate headers
   const missingHeaders = CSV_HEADER.filter(
-    (h) => h !== "nratax" && !headers.includes(h),
+    (h) => h !== "nratax" && h !== "reinvestdividends" && !headers.includes(h),
   );
   if (missingHeaders.length > 0) {
     return {
@@ -75,6 +88,7 @@ export async function batchImportAction(
   };
 
   const results: RowResult[] = [];
+  const importedSymbols = new Set<string>();
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -113,8 +127,12 @@ export async function batchImportAction(
 
     const nraTaxRaw = col(row, "nratax");
     const nraTax = nraTaxRaw ? parseFloat(nraTaxRaw) : null;
+    const reinvestDividendsRaw = col(row, "reinvestdividends").toLowerCase();
+    const reinvestDividends = reinvestDividendsRaw === "true" ||
+      reinvestDividendsRaw === "yes" ||
+      reinvestDividendsRaw === "1";
 
-    const parsed = createTransactionSchema.safeParse({
+    const parsed = batchImportTransactionSchema.safeParse({
       type: col(row, "type"),
       symbol: col(row, "symbol"),
       date: col(row, "date"),
@@ -122,6 +140,7 @@ export async function batchImportAction(
       unitPrice: col(row, "unitprice"),
       fee: col(row, "fee") || "0",
       nraTax: nraTax,
+      reinvestDividends,
     });
 
     if (!parsed.success) {
@@ -134,7 +153,11 @@ export async function batchImportAction(
     }
 
     try {
-      await createTransaction(account.id, parsed.data);
+      await createTransaction(
+        account.id,
+        parsed.data as CreateTransactionInput,
+      );
+      importedSymbols.add(parsed.data.symbol);
       results.push({
         row: rowNum,
         status: "ok",
@@ -150,6 +173,17 @@ export async function batchImportAction(
         reason: e instanceof Error ? e.message : "Unknown error",
       });
     }
+  }
+
+  // Enrich the Symbol table with names fetched in parallel
+  if (importedSymbols.size > 0) {
+    const provider = getFinanceProvider();
+    await Promise.all(
+      [...importedSymbols].map(async (ticker) => {
+        const { name, exchange } = await provider.getSymbolInfo(ticker);
+        await upsertSymbol(ticker, name, exchange);
+      }),
+    );
   }
 
   return {

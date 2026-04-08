@@ -28,19 +28,20 @@ model Account {
 }
 
 model Transaction {
-  id        String   @id @default(cuid())
-  type      String // "BUY" | "SELL" | "DIVIDEND"
-  symbol    String
-  date      DateTime
-  quantity  Float
-  unitPrice Float
-  fee       Float    @default(0)
-  nraTax    Float? // Non-Resident Alien withholding tax rate (e.g. 0.3 = 30%)
-  notes     String?
-  accountId String
-  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  type              String // "BUY" | "SELL" | "DIVIDEND" | "AUTO_BUY"
+  symbol            String
+  date              DateTime
+  quantity          Float
+  unitPrice         Float
+  fee               Float    @default(0)
+  nraTax            Float? // Non-Resident Alien withholding tax rate (e.g. 0.3 = 30%)
+  notes             String?
+  reinvestDividends Boolean  @default(false) // DRIP: auto-buy shares from dividend proceeds
+  accountId         String
+  account           Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 // Weekly adjusted-close prices fetched from Yahoo Finance.

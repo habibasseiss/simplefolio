@@ -2,7 +2,7 @@ import { AccountTypeFilter } from "@/components/account-type-filter"
 import { SetActions, SetHeader } from "@/components/header-context"
 import { Page } from "@/components/page"
 import { PortfolioValueChart } from "@/components/portfolio-value-chart"
-import { Badge } from "@/components/ui/badge"
+import { TransactionTypeBadge } from '@/components/transaction-type-badge'
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -12,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { TransactionType } from "@/domain/transaction/transaction.types"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { formatCurrency, formatDate } from '@/lib/format'
 import { computeAccountChart } from "@/lib/portfolio"
@@ -29,22 +28,6 @@ import {
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-
-function TransactionTypeBadge({ type }: { type: string }) {
-  const variants: Record<
-    TransactionType,
-    { label: string; variant: "default" | "destructive" | "secondary" }
-  > = {
-    BUY: { label: "Buy", variant: "default" },
-    SELL: { label: "Sell", variant: "destructive" },
-    DIVIDEND: { label: "Dividend", variant: "secondary" },
-  }
-  const config = variants[type as TransactionType] ?? {
-    label: type,
-    variant: "secondary" as const,
-  }
-  return <Badge variant={config.variant}>{config.label}</Badge>
-}
 
 const VALID_TYPES = ["BUY", "SELL", "DIVIDEND"] as const
 type TxType = (typeof VALID_TYPES)[number]
@@ -176,8 +159,7 @@ export default async function AccountDetailPage({
                           {formatCurrency(total, account.currency)}
                         </span>
                       ) : tx.type === "DIVIDEND" ? (
-                        <span className="flex items-center justify-end gap-1 text-blue-400 dark:text-blue-600">
-                          <PlusIcon className="size-3" />
+                        <span className="flex items-center justify-end gap-1 text-gray-400 dark:text-gray-600">
                           {formatCurrency(total, account.currency)}
                         </span>
                       ) : (

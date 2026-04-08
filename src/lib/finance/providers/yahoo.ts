@@ -99,6 +99,20 @@ export class YahooFinanceProvider implements FinanceProvider {
     }
   }
 
+  async getSymbolInfo(
+    ticker: string,
+  ): Promise<{ name: string | null; exchange: string | null }> {
+    try {
+      const quote = await this.yf.quote(ticker);
+      return {
+        name: quote.longName ?? quote.shortName ?? null,
+        exchange: quote.fullExchangeName ?? null,
+      };
+    } catch {
+      return { name: null, exchange: null };
+    }
+  }
+
   async getExchangeRate(from: string, to: string): Promise<number> {
     if (from === to) return 1;
     try {
