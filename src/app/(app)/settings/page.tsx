@@ -2,7 +2,7 @@ import { SetHeader } from "@/components/header-context"
 import { ImportAllDividendsButton } from "@/components/import-all-dividends-button"
 import { Page } from "@/components/page"
 import { SyncPriceHistoryButton } from "@/components/sync-price-history-button"
-import { ArrowRightIcon, BarChart2Icon, RefreshCwIcon, UploadIcon } from "lucide-react"
+import { ArrowRightIcon, BarChart2Icon, DownloadIcon, RefreshCwIcon, UploadIcon } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -34,6 +34,24 @@ export default function SettingsPage() {
                       Paste a CSV to bulk-import transactions across any account.
                       New accounts are created automatically when a matching name
                       is not found.
+                    </p>
+                  </div>
+                </div>
+                <ArrowRightIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </div>
+            </Link>
+
+            {/* Export CSV — direct download */}
+            <Link href="/api/export/transactions" className="group rounded-lg border p-4 transition-colors hover:bg-muted/50">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <DownloadIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Export Transactions</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      Download all your transactions as a CSV file. The format
+                      is compatible with Batch Import so you can use it as a
+                      backup or migrate to another account.
                     </p>
                   </div>
                 </div>
