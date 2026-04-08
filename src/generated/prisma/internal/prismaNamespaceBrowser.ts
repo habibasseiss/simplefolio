@@ -106,6 +106,7 @@ export const TransactionScalarFieldEnum = {
   nraTax: 'nraTax',
   notes: 'notes',
   reinvestDividends: 'reinvestDividends',
+  isDrip: 'isDrip',
   accountId: 'accountId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

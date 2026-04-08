@@ -5,9 +5,20 @@ services:
       - "3005:3000"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/simplefolio
+      CRON_SECRET: ${CRON_SECRET}
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
+
+  cron:
+    image: alpine:latest
+    environment:
+      CRON_SECRET: ${CRON_SECRET}
+    command: >
+      sh -c "apk add --no-cache curl && echo '0 0 * * * /usr/bin/curl -fsSL -X POST -H \"Authorization: Bearer $$CRON_SECRET\" http://app:3000/api/cron/import-dividends' > /etc/crontabs/root && crond -f -l 8"
+    depends_on:
+      - app
     restart: unless-stopped
 
   db:

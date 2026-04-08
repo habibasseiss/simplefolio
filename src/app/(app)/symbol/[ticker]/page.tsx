@@ -145,7 +145,7 @@ export default async function SymbolPage({
             <CardHeader className="pb-2">
               <CardDescription>Current Price</CardDescription>
               <CardTitle className="text-2xl">
-                {formatCurrency(quote.price)}
+                {formatCurrency(quote.price, chartCurrency)}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -161,7 +161,7 @@ export default async function SymbolPage({
                 ) : (
                   <ArrowDownIcon className="size-3" />
                 )}
-                {formatCurrency(Math.abs(quote.change))} (
+                {formatCurrency(Math.abs(quote.change), chartCurrency)} (
                 {formatNumber(Math.abs(quote.changePercent))}%)
               </span>
             </CardContent>
@@ -189,16 +189,16 @@ export default async function SymbolPage({
           <CardContent className="flex flex-col gap-1">
             {averageCost !== null && (
               <p className="text-sm text-muted-foreground">
-                Avg. cost {formatCurrency(averageCost)}
+                Avg. cost {formatCurrency(averageCost, chartCurrency)}
               </p>
             )}
             {currentValue !== null && (
               <p className="text-sm text-muted-foreground">
-                Market value {formatCurrency(currentValue)}
+                Market value {formatCurrency(currentValue, chartCurrency)}
               </p>
             )}
             <p className="text-sm text-muted-foreground">
-              Cost basis {formatCurrency(totalCost)}
+              Cost basis {formatCurrency(totalCost, chartCurrency)}
             </p>
           </CardContent>
         </Card>
@@ -216,7 +216,7 @@ export default async function SymbolPage({
                 }
               >
                 {unrealizedPnl >= 0 ? "+" : ""}
-                {formatCurrency(unrealizedPnl)}
+                {formatCurrency(unrealizedPnl, chartCurrency)}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -243,17 +243,17 @@ export default async function SymbolPage({
             <CardHeader className="pb-2">
               <CardDescription>Dividends Received</CardDescription>
               <CardTitle className="text-2xl text-blue-600 dark:text-blue-400">
-                {formatCurrency(totalDividendNet)}
+                {formatCurrency(totalDividendNet, chartCurrency)}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-1">
               {hasDividendTax ? (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Gross {formatCurrency(totalDividendGross)}
+                    Gross {formatCurrency(totalDividendGross, chartCurrency)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Tax withheld {formatCurrency(totalDividendTaxPaid)}
+                    Tax withheld {formatCurrency(totalDividendTaxPaid, chartCurrency)}
                   </p>
                 </>
               ) : (
@@ -314,7 +314,7 @@ export default async function SymbolPage({
                       {formatDate(tx.date)}
                     </TableCell>
                     <TableCell>
-                      <TransactionTypeBadge type={tx.type} />
+                      <TransactionTypeBadge type={tx.type} isDrip={tx.isDrip} />
                     </TableCell>
                     <TableCell>
                       <Link

@@ -133,7 +133,7 @@ export default async function AccountDetailPage({
                       {formatDate(tx.date)}
                     </TableCell>
                     <TableCell>
-                      <TransactionTypeBadge type={tx.type} />
+                      <TransactionTypeBadge type={tx.type} isDrip={tx.isDrip} />
                     </TableCell>
                     <TableCell className="font-mono font-medium">
                       <Link

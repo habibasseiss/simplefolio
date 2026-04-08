@@ -4,7 +4,6 @@ import {
   type CreateTransactionInput,
   createTransactionSchema,
 } from "@/domain/transaction/transaction.schema";
-import { ALL_TRANSACTION_TYPES } from "@/domain/transaction/transaction.types";
 import { getFinanceProvider } from "@/lib/finance";
 import {
   createAccount,
@@ -13,7 +12,6 @@ import {
 import { upsertSymbol } from "@/repositories/symbol.repository";
 import { createTransaction } from "@/repositories/transaction.repository";
 import { getDefaultUserId } from "@/repositories/user.repository";
-import { z } from "zod";
 
 export type RowResult =
   | {
@@ -31,11 +29,6 @@ export type BatchImportResult = {
   failed: number;
 };
 
-// Extends the user-facing schema to also accept AUTO_BUY, which can appear in CSV imports.
-const batchImportTransactionSchema = createTransactionSchema.extend({
-  type: z.enum(ALL_TRANSACTION_TYPES),
-});
-
 const CSV_HEADER = [
   "type",
   "symbol",
@@ -47,6 +40,7 @@ const CSV_HEADER = [
   "nratax",
   "account",
   "reinvestdividends",
+  "isdrip",
 ];
 
 function parseCSV(csv: string): { headers: string[]; rows: string[][] } {
@@ -65,7 +59,9 @@ export async function batchImportAction(
 
   // Validate headers
   const missingHeaders = CSV_HEADER.filter(
-    (h) => h !== "nratax" && h !== "reinvestdividends" && !headers.includes(h),
+    (h) =>
+      h !== "nratax" && h !== "reinvestdividends" && h !== "isdrip" &&
+      !headers.includes(h),
   );
   if (missingHeaders.length > 0) {
     return {
@@ -132,7 +128,11 @@ export async function batchImportAction(
       reinvestDividendsRaw === "yes" ||
       reinvestDividendsRaw === "1";
 
-    const parsed = batchImportTransactionSchema.safeParse({
+    const isDripRaw = col(row, "isdrip").toLowerCase();
+    const isDrip = isDripRaw === "true" || isDripRaw === "yes" ||
+      isDripRaw === "1";
+
+    const parsed = createTransactionSchema.safeParse({
       type: col(row, "type"),
       symbol: col(row, "symbol"),
       date: col(row, "date"),
@@ -141,6 +141,7 @@ export async function batchImportAction(
       fee: col(row, "fee") || "0",
       nraTax: nraTax,
       reinvestDividends,
+      isDrip,
     });
 
     if (!parsed.success) {

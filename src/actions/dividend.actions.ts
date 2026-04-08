@@ -70,9 +70,7 @@ export async function importDividendsAction(
       const sharesAtExDate = account.transactions
         .filter((tx) => new Date(tx.date) <= exDateEndOfDay)
         .reduce((acc, tx) => {
-          if (tx.type === "BUY" || tx.type === "AUTO_BUY") {
-            return acc + tx.quantity;
-          }
+          if (tx.type === "BUY") return acc + tx.quantity;
           if (tx.type === "SELL") return acc - tx.quantity;
           return acc;
         }, 0);
@@ -115,7 +113,7 @@ export async function importDividendsAction(
           },
         });
         skipped++;
-        // fall-through to handle AUTO_BUY update below
+        // fall-through to handle DRIP update below
       } else {
         await prisma.transaction.create({
           data: {
@@ -134,18 +132,14 @@ export async function importDividendsAction(
         inserted++;
       }
 
-      // DRIP: calculate shares from BUY transactions that have reinvestDividends enabled.
-      // AUTO_BUY shares spawned from those BUYs are also DRIP shares (compounding).
-      // We track which auto-buys are DRIP-originated by checking prior AUTO_BUY txns at same date
-      // as a previous DRIP event; simpler: treat all AUTO_BUY shares as DRIP shares since they
-      // can only exist because of a prior DRIP cycle.
+      // DRIP: calculate shares from BUY transactions that have reinvestDividends enabled
+      // (the user-opted positions), plus any existing DRIP BUYs (isDrip=true) for compounding.
       const dripSharesAtExDate = account.transactions
         .filter((tx) => new Date(tx.date) <= exDateEndOfDay)
         .reduce((acc, tx) => {
-          if (tx.type === "BUY" && tx.reinvestDividends) {
+          if (tx.type === "BUY" && (tx.reinvestDividends || tx.isDrip)) {
             return acc + tx.quantity;
           }
-          if (tx.type === "AUTO_BUY") return acc + tx.quantity;
           return acc;
         }, 0);
 
@@ -161,21 +155,22 @@ export async function importDividendsAction(
         if (price && price > 0) {
           const totalDividend = dripSharesAtExDate * dividend.amount *
             (1 - (nraTaxRate ?? 0));
-          const autoBuyQuantity = totalDividend / price;
-          const existingAutoBuy = await prisma.transaction.findFirst({
+          const dripQuantity = totalDividend / price;
+          const existingDrip = await prisma.transaction.findFirst({
             where: {
               accountId: account.id,
-              type: "AUTO_BUY",
+              type: "BUY",
+              isDrip: true,
               symbol,
               date: txDate,
             },
           });
-          if (existingAutoBuy) {
+          if (existingDrip) {
             if (overwrite) {
               await prisma.transaction.update({
-                where: { id: existingAutoBuy.id },
+                where: { id: existingDrip.id },
                 data: {
-                  quantity: autoBuyQuantity,
+                  quantity: dripQuantity,
                   unitPrice: price,
                   nraTax: nraTaxRate,
                   notes: `DRIP auto-buy. Ex-date: ${dividend.exDividendDate}`,
@@ -186,14 +181,14 @@ export async function importDividendsAction(
             await prisma.transaction.create({
               data: {
                 accountId: account.id,
-                type: "AUTO_BUY",
+                type: "BUY",
+                isDrip: true,
                 symbol,
                 date: txDate,
-                quantity: autoBuyQuantity,
+                quantity: dripQuantity,
                 unitPrice: price,
                 fee: 0,
                 nraTax: nraTaxRate,
-                reinvestDividends: false,
                 notes: `DRIP auto-buy. Ex-date: ${dividend.exDividendDate}`,
               },
             });

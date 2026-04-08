@@ -1,7 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import type { TransactionType } from "@/domain/transaction/transaction.types";
 
-export function TransactionTypeBadge({ type }: { type: string }) {
+export function TransactionTypeBadge({
+  type,
+  isDrip,
+}: {
+  type: string;
+  isDrip?: boolean;
+}) {
+  if (type === "BUY" && isDrip) {
+    return <Badge variant="secondary">DRIP</Badge>;
+  }
   const variants: Record<
     TransactionType,
     { label: string; variant: "default" | "destructive" | "secondary" }
@@ -9,7 +18,6 @@ export function TransactionTypeBadge({ type }: { type: string }) {
     BUY: { label: "Buy", variant: "default" },
     SELL: { label: "Sell", variant: "destructive" },
     DIVIDEND: { label: "Dividend", variant: "secondary" },
-    AUTO_BUY: { label: "DRIP", variant: "secondary" },
   }
   const config = variants[type as TransactionType] ?? {
     label: type,
