@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { formatCurrency, formatDate, formatNumber } from '../format';
 
 describe('Format Utils', () => {
@@ -12,13 +12,13 @@ describe('Format Utils', () => {
   describe('formatCurrency', () => {
     it('formats number as USD currency by default', () => {
       // Different node versions might differ in space characters for currencies
-      const formatted = formatCurrency(1234.56).replace(/\s/g, ''); 
+      const formatted = formatCurrency(1234.56).replace(/\s/g, '');
       expect(formatted).toContain('$1,234.56');
     });
 
     it('formats number with custom currency', () => {
-      const formatted = formatCurrency(1234.56, 'CAD').replace(/\s/g, '');
-      expect(formatted).toContain('CA$1,234.56');
+      const formatted = formatCurrency(1234.56, 'BRL').replace(/\s/g, '');
+      expect(formatted).toContain('R$1.234,56');
     });
   });
 

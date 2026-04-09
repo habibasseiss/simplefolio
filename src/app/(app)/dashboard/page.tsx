@@ -1,6 +1,7 @@
 import { AllocationChart } from "@/components/allocation-chart"
+import { CurrencyToggle } from "@/components/currency-toggle"
 import { DividendIncomeChart } from "@/components/dividend-income-chart"
-import { SetHeader } from "@/components/header-context"
+import { SetActions, SetHeader } from "@/components/header-context"
 import { Page } from "@/components/page"
 import { PortfolioValueChart } from "@/components/portfolio-value-chart"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/table"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
-import { getRatesTo } from "@/lib/fx"
+import { getExchangeRate, getRatesTo } from "@/lib/fx"
 import { computeOverallChart } from "@/lib/portfolio"
 import { findPriceHistory } from "@/repositories/price-history.repository"
 import { findSymbolsByTickers } from "@/repositories/symbol.repository"
@@ -38,8 +39,29 @@ import {
   WalletIcon,
 } from "lucide-react"
 import Link from "next/link"
+import { Suspense } from "react"
 
-export default async function DashboardPage() {
+// Currencies available for display — driven by the CURRENCIES env var.
+// First value is the default (no URL param needed).
+const DISPLAY_CURRENCIES = (process.env.CURRENCIES ?? "USD")
+  .split(",")
+  .map((c) => c.trim())
+  .filter(Boolean)
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ currency?: string }>
+}) {
+  const { currency: rawCurrency } = await searchParams
+
+  // Resolve & validate display currency
+  const defaultCurrency = DISPLAY_CURRENCIES[0] ?? "USD"
+  const displayCurrency =
+    rawCurrency && DISPLAY_CURRENCIES.includes(rawCurrency)
+      ? rawCurrency
+      : defaultCurrency
+
   const userId = await getDefaultUserId()
 
   const [allTransactions, symbols] = await Promise.all([
@@ -66,11 +88,15 @@ export default async function DashboardPage() {
     (s) => priceHistoryMap.get(s)?.at(-1)?.currency ?? "USD",
   )
   const accountCurrencies = allTransactions.map((tx) => tx.account.currency)
+  // Core FX rates: everything → USD (the internal accounting currency)
   const fxRates = await getRatesTo(
     [...priceCurrencies, ...accountCurrencies],
     "USD",
   )
   const rate = (ccy: string) => fxRates.get(ccy) ?? 1
+
+  // Display FX rate: USD → selected display currency
+  const displayRate = await getExchangeRate("USD", displayCurrency)
 
   // ── Per-symbol positions (all monetary values in USD) ─────────────────
   const positions = symbols
@@ -129,42 +155,58 @@ export default async function DashboardPage() {
     })
     .filter((p) => p.shares > 0.00001)
 
-  // ── Portfolio-level KPIs (all in USD) ────────────────────────────────
-  const totalValue = positions.reduce((acc, p) => acc + (p.valueUsd ?? 0), 0)
-  const totalCost = positions.reduce((acc, p) => acc + p.costBasisUsd, 0)
-  const totalPnl = totalValue - totalCost
-  const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0
+  // ── Portfolio-level KPIs (all in USD internally) ────────────────────────────────
+  const totalValueUsd = positions.reduce((acc, p) => acc + (p.valueUsd ?? 0), 0)
+  const totalCostUsd = positions.reduce((acc, p) => acc + p.costBasisUsd, 0)
+  const totalPnlUsd = totalValueUsd - totalCostUsd
+  const totalPnlPct = totalCostUsd > 0 ? (totalPnlUsd / totalCostUsd) * 100 : 0
 
   const dividendTxs = allTransactions.filter((tx) => tx.type === "DIVIDEND")
-  // Convert dividends to USD as well
-  const totalDividends = dividendTxs.reduce(
+  // Convert dividends to USD
+  const totalDividendsUsd = dividendTxs.reduce(
     (acc, tx) =>
       acc + calcTransactionTotal(tx) * rate(tx.account.currency),
     0,
   )
 
-  // ── Portfolio chart (FX-adjusted, all in USD) ────────────────────────
+  // ── Apply display currency conversion ───────────────────────────────────
+  const d = (usdValue: number) => usdValue * displayRate
+
+  const totalValue = d(totalValueUsd)
+  const totalCost = d(totalCostUsd)
+  const totalPnl = d(totalPnlUsd)
+  const totalDividends = d(totalDividendsUsd)
+
+  // ── Portfolio chart (FX-adjusted, all in USD, scaled to display currency) ───
   const txsForChart = allTransactions.map((tx) => ({
     ...tx,
     accountCurrency: tx.account.currency,
   }))
-  const chartData = computeOverallChart(txsForChart, priceHistoryMap, fxRates)
+  const chartDataUsd = computeOverallChart(txsForChart, priceHistoryMap, fxRates)
+  // Scale chart points to the display currency
+  const chartData = chartDataUsd.map((pt) => ({
+    ...pt,
+    value: pt.value * displayRate,
+    cost: pt.cost * displayRate,
+  }))
 
-  // ── Allocation data (USD) ─────────────────────────────────────────────
+  // ── Allocation data (display currency) ───────────────────────────────────
   const allocationData = [...positions]
     .sort((a, b) => (b.valueUsd ?? 0) - (a.valueUsd ?? 0))
     .map((p) => ({
       symbol: p.symbol,
       name: p.name,
-      value: p.valueUsd ?? 0,
-      pct: totalValue > 0 ? ((p.valueUsd ?? 0) / totalValue) * 100 : 0,
+      value: d(p.valueUsd ?? 0),
+      pct: totalValueUsd > 0 ? ((p.valueUsd ?? 0) / totalValueUsd) * 100 : 0,
     }))
 
-  // ── Dividend income by year ───────────────────────────────────────────
+  // ── Dividend income by year (in display currency) ──────────────────────────
   const dividendsByYear: Record<string, number> = {}
   for (const tx of dividendTxs) {
     const year = new Date(tx.date).getUTCFullYear().toString()
-    dividendsByYear[year] = (dividendsByYear[year] ?? 0) + calcTransactionTotal(tx)
+    dividendsByYear[year] =
+      (dividendsByYear[year] ?? 0) +
+      calcTransactionTotal(tx) * rate(tx.account.currency) * displayRate
   }
   const dividendYearData = Object.entries(dividendsByYear)
     .map(([year, amount]) => ({ year, amount }))
@@ -186,6 +228,16 @@ export default async function DashboardPage() {
       <SetHeader>
         <h1 className="text-base font-medium">Dashboard</h1>
       </SetHeader>
+      {DISPLAY_CURRENCIES.length > 1 && (
+        <SetActions>
+          <Suspense>
+            <CurrencyToggle
+              currencies={DISPLAY_CURRENCIES}
+              activeCurrency={displayCurrency}
+            />
+          </Suspense>
+        </SetActions>
+      )}
 
       {!hasData ? (
         <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-16 text-center">
@@ -211,7 +263,7 @@ export default async function DashboardPage() {
               <CardHeader className="pb-2">
                 <CardDescription>Portfolio Value</CardDescription>
                 <CardTitle className="text-2xl tabular-nums">
-                  {formatCurrency(totalValue)}
+                  {formatCurrency(totalValue, displayCurrency)}
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
@@ -234,7 +286,7 @@ export default async function DashboardPage() {
                   ) : (
                     <ArrowDownIcon className="size-5" />
                   )}
-                  {formatCurrency(Math.abs(totalPnl))}
+                  {formatCurrency(Math.abs(totalPnl), displayCurrency)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -254,7 +306,7 @@ export default async function DashboardPage() {
               <CardHeader className="pb-2">
                 <CardDescription>Cost Basis</CardDescription>
                 <CardTitle className="text-2xl tabular-nums">
-                  {formatCurrency(totalCost)}
+                  {formatCurrency(totalCost, displayCurrency)}
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
@@ -266,7 +318,7 @@ export default async function DashboardPage() {
               <CardHeader className="pb-2">
                 <CardDescription>Dividend Income</CardDescription>
                 <CardTitle className="text-2xl tabular-nums text-blue-600 dark:text-blue-400">
-                  {formatCurrency(totalDividends)}
+                  {formatCurrency(totalDividends, displayCurrency)}
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
@@ -281,13 +333,14 @@ export default async function DashboardPage() {
             <PortfolioValueChart
               data={chartData}
               description="Weekly portfolio value vs cost basis"
+              currency={displayCurrency}
             />
           )}
 
           {/* ── Allocation + Dividend Income ─────────────────────── */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <AllocationChart data={allocationData} />
-            <DividendIncomeChart data={dividendYearData} />
+            <AllocationChart data={allocationData} currency={displayCurrency} />
+            <DividendIncomeChart data={dividendYearData} currency={displayCurrency} />
           </div>
 
           {/* ── Positions Table ───────────────────────────────────── */}
@@ -341,12 +394,13 @@ export default async function DashboardPage() {
                         {formatNumber(p.shares)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {formatCurrency(p.avgCostUsd)}
+                        {formatCurrency(d(p.avgCostUsd), displayCurrency)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {p.latestClose !== null ? (
                           formatCurrency(
-                            p.latestClose * rate(p.priceCurrency),
+                            p.latestClose * rate(p.priceCurrency) * displayRate,
+                            displayCurrency,
                           )
                         ) : (
                           <span className="text-muted-foreground">—</span>
@@ -354,7 +408,7 @@ export default async function DashboardPage() {
                       </TableCell>
                       <TableCell className="text-right tabular-nums font-medium">
                         {p.valueUsd !== null ? (
-                          formatCurrency(p.valueUsd)
+                          formatCurrency(d(p.valueUsd), displayCurrency)
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
@@ -370,7 +424,7 @@ export default async function DashboardPage() {
                           >
                             <span>
                               {p.pnl >= 0 ? "+" : ""}
-                              {formatCurrency(p.pnl)}
+                              {formatCurrency(d(p.pnl), displayCurrency)}
                             </span>
                             {p.pnlPct !== null && (
                               <span className="block text-xs">
@@ -384,8 +438,8 @@ export default async function DashboardPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {totalValue > 0 && p.valueUsd !== null
-                          ? `${((p.valueUsd / totalValue) * 100).toFixed(1)}%`
+                        {totalValueUsd > 0 && p.valueUsd !== null
+                          ? `${((p.valueUsd / totalValueUsd) * 100).toFixed(1)}%`
                           : "—"}
                       </TableCell>
                     </TableRow>
@@ -453,16 +507,16 @@ export default async function DashboardPage() {
                           {tx.type === "SELL" ? (
                             <span className="flex items-center justify-end gap-1 text-red-600 dark:text-red-400">
                               <MinusIcon className="size-3" />
-                              {formatCurrency(total, tx.account.currency)}
+                              {formatCurrency(total * rate(tx.account.currency) * displayRate, displayCurrency)}
                             </span>
                           ) : tx.type === "DIVIDEND" ? (
                             <span className="flex items-center justify-end gap-1 text-blue-600 dark:text-blue-400">
                               <PlusIcon className="size-3" />
-                              {formatCurrency(total, tx.account.currency)}
+                              {formatCurrency(total * rate(tx.account.currency) * displayRate, displayCurrency)}
                             </span>
                           ) : (
                             <span className="text-muted-foreground">
-                              {formatCurrency(total, tx.account.currency)}
+                              {formatCurrency(total * rate(tx.account.currency) * displayRate, displayCurrency)}
                             </span>
                           )}
                         </TableCell>

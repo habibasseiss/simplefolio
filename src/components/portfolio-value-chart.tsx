@@ -16,13 +16,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import * as React from "react"
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group"
 import type { ChartPoint } from "@/lib/portfolio"
+import { getCurrencyLocale } from "@/lib/format"
 
 const chartConfig = {
   value: {
@@ -48,43 +54,85 @@ export function PortfolioValueChart({
   description = "Weekly market value vs cost basis",
   currency = "USD",
 }: PortfolioValueChartProps) {
-  if (data.length === 0) {
+  const [timeRange, setTimeRange] = React.useState("Total")
+
+  const filteredData = React.useMemo(() => {
+    if (timeRange === "Total" || data.length === 0) return data
+
+    // Using the last data point as our 'current' date for relative lookbacks
+    const latestDateStr = data[data.length - 1].date
+    const latestDate = new Date(latestDateStr + "T00:00:00Z")
+    let cutoffDate = new Date(latestDate)
+
+    if (timeRange === "YTD") {
+      cutoffDate = new Date(Date.UTC(latestDate.getUTCFullYear(), 0, 1))
+    } else if (timeRange === "1Y") {
+      cutoffDate.setUTCFullYear(latestDate.getUTCFullYear() - 1)
+    } else if (timeRange === "2Y") {
+      cutoffDate.setUTCFullYear(latestDate.getUTCFullYear() - 2)
+    } else if (timeRange === "5Y") {
+      cutoffDate.setUTCFullYear(latestDate.getUTCFullYear() - 5)
+    }
+
+    return data.filter((d) => new Date(d.date + "T00:00:00Z") >= cutoffDate)
+  }, [data, timeRange])
+
+  if (filteredData.length === 0) {
     return null
   }
 
-  const fmt = new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 })
+  const fmt = new Intl.NumberFormat(getCurrencyLocale(currency), { style: "currency", currency, maximumFractionDigits: 0 })
 
-  const formatted = data.map((d) => ({
+  const formatted = filteredData.map((d) => ({
     ...d,
     value: Math.max(0, d.value),
     cost: Math.max(0, d.cost),
   }))
 
-  const latest = formatted[formatted.length - 1]
-  const pnl = latest ? latest.value - latest.cost : 0
-  const pnlPct = latest && latest.cost > 0 ? (pnl / latest.cost) * 100 : 0
+  // PnL based on the original data so it doesn't artificially drop when zooming in
+  const latestOriginal = data[data.length - 1]
+  const pnl = latestOriginal ? latestOriginal.value - latestOriginal.cost : 0
+  const pnlPct = latestOriginal && latestOriginal.cost > 0 ? (pnl / latestOriginal.cost) * 100 : 0
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardDescription>{description}</CardDescription>
-        <CardTitle className="flex items-baseline gap-2 text-2xl tabular-nums">
-          {title && <span className="text-lg font-semibold">{title}</span>}
-          {fmt.format(latest?.value ?? 0)}
-          {latest && (
-            <span
-              className={
-                pnl >= 0
-                  ? "text-sm font-normal text-green-600 dark:text-green-400"
-                  : "text-sm font-normal text-red-600 dark:text-red-400"
-              }
-            >
-              {pnl >= 0 ? "+" : ""}
-              {fmt.format(pnl)} ({pnlPct >= 0 ? "+" : ""}
-              {pnlPct.toFixed(2)}%)
-            </span>
-          )}
-        </CardTitle>
+      <CardHeader className="flex flex-row items-start justify-between pb-2">
+        <div className="flex flex-col gap-1">
+          <CardDescription>{description}</CardDescription>
+          <CardTitle className="flex items-baseline gap-2 text-2xl tabular-nums">
+            {title && <span className="text-lg font-semibold">{title}</span>}
+            {fmt.format(latestOriginal?.value ?? 0)}
+            {latestOriginal && (
+              <span
+                className={
+                  pnl >= 0
+                    ? "text-sm font-normal text-green-600 dark:text-green-400"
+                    : "text-sm font-normal text-red-600 dark:text-red-400"
+                }
+              >
+                {pnl >= 0 ? "+" : ""}
+                {fmt.format(pnl)} ({pnlPct >= 0 ? "+" : ""}
+                {pnlPct.toFixed(2)}%)
+              </span>
+            )}
+          </CardTitle>
+        </div>
+        <ToggleGroup
+          type="single"
+          value={timeRange}
+          onValueChange={(v) => {
+            if (v) setTimeRange(v)
+          }}
+          variant="outline"
+          size="sm"
+          className="hidden sm:flex"
+        >
+          <ToggleGroupItem value="YTD" className="px-2 sm:px-3 text-xs">YTD</ToggleGroupItem>
+          <ToggleGroupItem value="1Y" className="px-2 sm:px-3 text-xs">1Y</ToggleGroupItem>
+          <ToggleGroupItem value="2Y" className="px-2 sm:px-3 text-xs">2Y</ToggleGroupItem>
+          <ToggleGroupItem value="5Y" className="px-2 sm:px-3 text-xs">5Y</ToggleGroupItem>
+          <ToggleGroupItem value="Total" className="px-2 sm:px-3 text-xs">Total</ToggleGroupItem>
+        </ToggleGroup>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer

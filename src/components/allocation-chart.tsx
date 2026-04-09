@@ -13,6 +13,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { getCurrencyLocale } from "@/lib/format"
 import Link from "next/link"
 import { Cell, Pie, PieChart } from "recharts"
 
@@ -35,11 +36,12 @@ export function AllocationChart({
   data,
   currency = "USD",
 }: AllocationChartProps) {
-  const fmt = new Intl.NumberFormat("en-US", {
+  const fmt = new Intl.NumberFormat(getCurrencyLocale(currency), {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
   })
+
 
   const chartConfig: ChartConfig = Object.fromEntries(
     data.map((item, i) => [

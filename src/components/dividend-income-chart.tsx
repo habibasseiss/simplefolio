@@ -13,6 +13,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { getCurrencyLocale } from "@/lib/format"
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
 
 interface DividendIncomeChartProps {
@@ -31,7 +32,7 @@ export function DividendIncomeChart({
   data,
   currency = "USD",
 }: DividendIncomeChartProps) {
-  const fmt = new Intl.NumberFormat("en-US", {
+  const fmt = new Intl.NumberFormat(getCurrencyLocale(currency), {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
