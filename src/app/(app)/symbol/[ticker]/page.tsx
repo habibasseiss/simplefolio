@@ -4,6 +4,7 @@ import { Page } from "@/components/page"
 import { PortfolioValueChart } from "@/components/portfolio-value-chart"
 import { SymbolAccountFilter } from "@/components/symbol-account-filter"
 import { SymbolDateFilter } from "@/components/symbol-date-filter"
+import { SyncTesouroButton } from "@/components/sync-tesouro-button"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
 import {
   Card,
@@ -20,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { isTesouroBond } from "@/domain/tesouro/tesouro.utils"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { getFinanceProvider } from "@/lib/finance"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
@@ -50,16 +52,36 @@ export default async function SymbolPage({
   const symbol = decodeURIComponent(ticker).toUpperCase()
   const userId = await getDefaultUserId()
 
+  const isBond = isTesouroBond(symbol)
+
   const [allTransactions, quote, priceHistory, symbolRecord] = await Promise.all([
     findTransactionsBySymbol(userId, symbol),
-    getFinanceProvider()
-      .getGlobalQuote(symbol)
-      .catch(() => null),
+    isBond
+      ? Promise.resolve(null)
+      : getFinanceProvider()
+        .getGlobalQuote(symbol)
+        .catch(() => null),
     findPriceHistory(symbol),
     findSymbol(symbol),
   ])
 
   const selectedAccountIds = accounts ? accounts.split(",") : null
+
+  // For TD bonds, synthesise a quote from the most recent PU in price history
+  const effectiveQuote = isBond
+    ? (() => {
+      const latest = [...priceHistory].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      )[0]
+      if (!latest) return null
+      return {
+        price: latest.close,
+        change: 0,
+        changePercent: 0,
+        latestTradingDay: new Date(latest.date).toISOString().split("T")[0],
+      }
+    })()
+    : quote
 
   const filteredAllTransactions = selectedAccountIds
     ? allTransactions.filter((tx) => selectedAccountIds.includes(tx.accountId))
@@ -96,7 +118,7 @@ export default async function SymbolPage({
   }, 0)
 
   const averageCost = totalShares > 0 ? totalCost / totalShares : null
-  const currentValue = quote ? totalShares * quote.price : null
+  const currentValue = effectiveQuote ? totalShares * effectiveQuote.price : null
   const unrealizedPnl =
     currentValue !== null && averageCost !== null
       ? currentValue - totalShares * averageCost
@@ -135,9 +157,9 @@ export default async function SymbolPage({
           <h1 className="text-base font-medium">{symbol}</h1>
           {symbolRecord?.name ? (
             <p className="text-xs text-muted-foreground">{symbolRecord.name}</p>
-          ) : quote ? (
+          ) : effectiveQuote ? (
             <p className="text-xs text-muted-foreground">
-              {quote.latestTradingDay}
+              {effectiveQuote.latestTradingDay}
             </p>
           ) : null}
         </div>
@@ -154,35 +176,45 @@ export default async function SymbolPage({
             <SymbolDateFilter from={from} to={to} />
           </div>
         </Suspense>
-        <ImportDividendsButton symbol={symbol} />
+        {isBond ? (
+          <SyncTesouroButton />
+        ) : (
+          <ImportDividendsButton symbol={symbol} />
+        )}
       </SetActions>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Card 1: Current Price */}
-        {quote ? (
+        {effectiveQuote ? (
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Current Price</CardDescription>
+              <CardDescription>{isBond ? "Current PU" : "Current Price"}</CardDescription>
               <CardTitle className="text-2xl">
-                {formatCurrency(quote.price, chartCurrency)}
+                {formatCurrency(effectiveQuote.price, chartCurrency)}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <span
-                className={
-                  quote.change >= 0
-                    ? "flex items-center gap-1 text-sm text-green-600 dark:text-green-400"
-                    : "flex items-center gap-1 text-sm text-red-600 dark:text-red-400"
-                }
-              >
-                {quote.change >= 0 ? (
-                  <ArrowUpIcon className="size-3" />
-                ) : (
-                  <ArrowDownIcon className="size-3" />
-                )}
-                {formatCurrency(Math.abs(quote.change), chartCurrency)} (
-                {formatNumber(Math.abs(quote.changePercent))}%)
-              </span>
+              {isBond ? (
+                <p className="text-sm text-muted-foreground">
+                  {effectiveQuote.latestTradingDay}
+                </p>
+              ) : (
+                <span
+                  className={
+                    effectiveQuote.change >= 0
+                      ? "flex items-center gap-1 text-sm text-green-600 dark:text-green-400"
+                      : "flex items-center gap-1 text-sm text-red-600 dark:text-red-400"
+                  }
+                >
+                  {effectiveQuote.change >= 0 ? (
+                    <ArrowUpIcon className="size-3" />
+                  ) : (
+                    <ArrowDownIcon className="size-3" />
+                  )}
+                  {formatCurrency(Math.abs(effectiveQuote.change), chartCurrency)} (
+                  {formatNumber(Math.abs(effectiveQuote.changePercent))}%)
+                </span>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -202,7 +234,7 @@ export default async function SymbolPage({
           <CardHeader className="pb-2">
             <CardDescription>Position</CardDescription>
             <CardTitle className="text-2xl">
-              {formatNumber(totalShares)} shares
+              {formatNumber(totalShares)} {isBond ? "units" : "shares"}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-1">

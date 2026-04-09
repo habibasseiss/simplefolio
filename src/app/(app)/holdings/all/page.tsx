@@ -1,14 +1,19 @@
+import { AccountTypeFilter } from "@/components/account-type-filter"
+import { CurrencyToggle } from "@/components/currency-toggle"
 import { SetActions, SetHeader } from "@/components/header-context"
 import { ImportAllDividendsButton } from "@/components/import-all-dividends-button"
 import { Page } from "@/components/page"
 import { PortfolioValueChart } from "@/components/portfolio-value-chart"
 import { SymbolDateFilter } from "@/components/symbol-date-filter"
+import { SyncTesouroButton } from "@/components/sync-tesouro-button"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { isTesouroBond } from "@/domain/tesouro/tesouro.utils"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
+import { DISPLAY_CURRENCIES, resolveDisplayCurrency } from "@/lib/display-currencies"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
-import { getRatesTo } from "@/lib/fx"
+import { getExchangeRate, getRatesTo } from "@/lib/fx"
 import { computeOverallChart } from "@/lib/portfolio"
 import { findPriceHistory } from "@/repositories/price-history.repository"
 import { findAllSymbols, findAllTransactionsForUser } from "@/repositories/transaction.repository"
@@ -20,9 +25,17 @@ import { Suspense } from "react"
 export default async function AllHoldingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>
+  searchParams: Promise<{ from?: string; to?: string; category?: string; currency?: string }>
 }) {
-  const { from, to } = await searchParams
+  const { from, to, category: rawCategory, currency: rawCurrency } = await searchParams
+
+  const displayCurrency = resolveDisplayCurrency(rawCurrency)
+
+  const VALID_CATEGORIES = ["stocks", "bonds"] as const
+  type AssetCategory = (typeof VALID_CATEGORIES)[number]
+  const activeCategory = rawCategory
+    ? rawCategory.split(",").filter((c): c is AssetCategory => (VALID_CATEGORIES as readonly string[]).includes(c))
+    : null
   const userId = await getDefaultUserId()
   const [allTransactions, symbols] = await Promise.all([
     findAllTransactionsForUser(userId),
@@ -38,35 +51,50 @@ export default async function AllHoldingsPage({
   const accountCurrencies = allTransactions.map((tx) => tx.account.currency)
   const fxRates = await getRatesTo([...priceCurrencies, ...accountCurrencies], "USD")
 
-  const txsWithCurrency = allTransactions.map((tx) => ({
-    ...tx,
-    accountCurrency: tx.account.currency,
-  }))
+  // Display FX rate: USD → selected display currency
+  const displayRate = await getExchangeRate("USD", displayCurrency)
 
   const fromDate = from ? new Date(from + "T00:00:00") : null
   const toDate = to ? new Date(to + "T23:59:59.999") : null
 
-  const transactions =
-    fromDate || toDate
-      ? allTransactions.filter((tx) => {
-        const d = new Date(tx.date)
-        if (fromDate && d < fromDate) return false
-        if (toDate && d > toDate) return false
-        return true
-      })
-      : allTransactions
+  const isCategoryMatch = (symbol: string) => {
+    if (!activeCategory || activeCategory.length === 0) return true
+    const isbond = isTesouroBond(symbol)
+    if (isbond && !activeCategory.includes("bonds")) return false
+    if (!isbond && !activeCategory.includes("stocks")) return false
+    return true
+  }
+
+  const txsWithCurrency = allTransactions
+    .filter((tx) => isCategoryMatch(tx.symbol))
+    .map((tx) => ({
+      ...tx,
+      accountCurrency: tx.account.currency,
+    }))
+
+  const transactions = allTransactions.filter((tx) => {
+    if (!isCategoryMatch(tx.symbol)) return false
+    const d = new Date(tx.date)
+    if (fromDate && d < fromDate) return false
+    if (toDate && d > toDate) return false
+    return true
+  })
 
   const dividendTransactions = transactions.filter((tx) => tx.type === "DIVIDEND")
+  const totalDividendNet = dividendTransactions.reduce(
+    (acc, tx) =>
+      acc + calcTransactionTotal(tx) * (fxRates.get(tx.account.currency) ?? 1) * displayRate,
+    0,
+  )
   const totalDividendGross = dividendTransactions.reduce(
-    (acc, tx) => acc + tx.quantity * tx.unitPrice,
+    (acc, tx) =>
+      acc + tx.quantity * tx.unitPrice * (fxRates.get(tx.account.currency) ?? 1) * displayRate,
     0,
   )
   const totalDividendTaxPaid = dividendTransactions.reduce(
-    (acc, tx) => acc + tx.quantity * tx.unitPrice * (tx.nraTax ?? 0),
-    0,
-  )
-  const totalDividendNet = dividendTransactions.reduce(
-    (acc, tx) => acc + calcTransactionTotal(tx),
+    (acc, tx) =>
+      acc +
+      tx.quantity * tx.unitPrice * (tx.nraTax ?? 0) * (fxRates.get(tx.account.currency) ?? 1) * displayRate,
     0,
   )
   const hasDividendTax = totalDividendTaxPaid > 0
@@ -84,6 +112,11 @@ export default async function AllHoldingsPage({
     ]),
   )
   const overallChartData = computeOverallChart(txsWithCurrency, filteredPriceHistoryMap, fxRates)
+  const chartData = overallChartData.map((pt) => ({
+    ...pt,
+    value: pt.value * displayRate,
+    cost: pt.cost * displayRate,
+  }))
 
   return (
     <Page>
@@ -94,6 +127,15 @@ export default async function AllHoldingsPage({
         <Suspense>
           <SymbolDateFilter from={from} to={to} />
         </Suspense>
+        <Suspense>
+          <AccountTypeFilter activeTypes={null} activeCategory={activeCategory} />
+        </Suspense>
+        {DISPLAY_CURRENCIES.length > 1 && (
+          <Suspense>
+            <CurrencyToggle currencies={DISPLAY_CURRENCIES} activeCurrency={displayCurrency} />
+          </Suspense>
+        )}
+        <SyncTesouroButton />
         <ImportAllDividendsButton />
       </SetActions>
 
@@ -103,17 +145,17 @@ export default async function AllHoldingsPage({
             <CardHeader className="pb-2">
               <CardDescription>Dividends Received</CardDescription>
               <CardTitle className="text-2xl text-blue-600 dark:text-blue-400">
-                {formatCurrency(totalDividendNet)}
+                {formatCurrency(totalDividendNet, displayCurrency)}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-1">
               {hasDividendTax ? (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Gross {formatCurrency(totalDividendGross)}
+                    Gross {formatCurrency(totalDividendGross, displayCurrency)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Tax withheld {formatCurrency(totalDividendTaxPaid)}
+                    Tax withheld {formatCurrency(totalDividendTaxPaid, displayCurrency)}
                   </p>
                 </>
               ) : (
@@ -129,8 +171,9 @@ export default async function AllHoldingsPage({
 
       {overallChartData.length > 0 && (
         <PortfolioValueChart
-          data={overallChartData}
+          data={chartData}
           description="Weekly total portfolio value vs cost basis"
+          currency={displayCurrency}
         />
       )}
 

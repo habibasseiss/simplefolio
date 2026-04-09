@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
+import { DISPLAY_CURRENCIES, resolveDisplayCurrency } from "@/lib/display-currencies"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
 import { getExchangeRate, getRatesTo } from "@/lib/fx"
 import { computeOverallChart } from "@/lib/portfolio"
@@ -41,12 +42,7 @@ import {
 import Link from "next/link"
 import { Suspense } from "react"
 
-// Currencies available for display — driven by the CURRENCIES env var.
-// First value is the default (no URL param needed).
-const DISPLAY_CURRENCIES = (process.env.CURRENCIES ?? "USD")
-  .split(",")
-  .map((c) => c.trim())
-  .filter(Boolean)
+// Currencies available for display — see src/lib/display-currencies.ts
 
 export default async function DashboardPage({
   searchParams,
@@ -55,12 +51,7 @@ export default async function DashboardPage({
 }) {
   const { currency: rawCurrency } = await searchParams
 
-  // Resolve & validate display currency
-  const defaultCurrency = DISPLAY_CURRENCIES[0] ?? "USD"
-  const displayCurrency =
-    rawCurrency && DISPLAY_CURRENCIES.includes(rawCurrency)
-      ? rawCurrency
-      : defaultCurrency
+  const displayCurrency = resolveDisplayCurrency(rawCurrency)
 
   const userId = await getDefaultUserId()
 

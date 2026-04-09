@@ -846,6 +846,7 @@ export const TransactionScalarFieldEnum = {
   quantity: 'quantity',
   unitPrice: 'unitPrice',
   fee: 'fee',
+  purchaseRate: 'purchaseRate',
   nraTax: 'nraTax',
   notes: 'notes',
   reinvestDividends: 'reinvestDividends',

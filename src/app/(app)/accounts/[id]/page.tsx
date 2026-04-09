@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { isTesouroBond } from "@/domain/tesouro/tesouro.utils"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { formatCurrency, formatDate } from '@/lib/format'
 import { computeAccountChart } from "@/lib/portfolio"
@@ -21,6 +22,7 @@ import { findTransactionsByAccountId } from "@/repositories/transaction.reposito
 import { getDefaultUserId } from "@/repositories/user.repository"
 import {
   DollarSignIcon,
+  LandmarkIcon,
   MinusIcon,
   PencilIcon,
   PlusIcon
@@ -32,19 +34,26 @@ import { Suspense } from "react"
 const VALID_TYPES = ["BUY", "SELL", "DIVIDEND"] as const
 type TxType = (typeof VALID_TYPES)[number]
 
+const VALID_CATEGORIES = ["stocks", "bonds"] as const
+type AssetCategory = (typeof VALID_CATEGORIES)[number]
+
 export default async function AccountDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ types?: string }>
+  searchParams: Promise<{ types?: string; category?: string }>
 }) {
   const { id } = await params
-  const { types: rawTypes } = await searchParams
+  const { types: rawTypes, category: rawCategory } = await searchParams
   const userId = await getDefaultUserId()
 
   const activeTypes = rawTypes
     ? (rawTypes.split(",").filter((t): t is TxType => (VALID_TYPES as readonly string[]).includes(t)))
+    : null
+
+  const activeCategory = rawCategory
+    ? (rawCategory.split(",").filter((c): c is AssetCategory => (VALID_CATEGORIES as readonly string[]).includes(c)))
     : null
 
   const [account, allTransactions] = await Promise.all([
@@ -58,12 +67,27 @@ export default async function AccountDetailPage({
   const symbols = [...new Set(allTransactions.filter((tx) => tx.type === "BUY" || tx.type === "SELL").map((tx) => tx.symbol))]
   const priceHistories = await Promise.all(symbols.map((s) => findPriceHistory(s)))
   const priceHistoryMap = new Map(symbols.map((s, i) => [s, priceHistories[i]]))
-  const accountChartData = computeAccountChart(allTransactions, priceHistoryMap)
 
-  const transactions =
-    activeTypes && activeTypes.length > 0
-      ? allTransactions.filter((tx) => activeTypes.includes(tx.type as TxType))
-      : allTransactions
+  // Filter transactions used for the chart by category
+  const chartTransactions = activeCategory && activeCategory.length > 0
+    ? allTransactions.filter((tx) => {
+      const isbond = isTesouroBond(tx.symbol)
+      if (isbond && !activeCategory.includes("bonds")) return false
+      if (!isbond && !activeCategory.includes("stocks")) return false
+      return true
+    })
+    : allTransactions
+  const accountChartData = computeAccountChart(chartTransactions, priceHistoryMap)
+
+  const transactions = allTransactions.filter((tx) => {
+    if (activeTypes && activeTypes.length > 0 && !activeTypes.includes(tx.type as TxType)) return false
+    if (activeCategory && activeCategory.length > 0) {
+      const isbond = isTesouroBond(tx.symbol)
+      if (isbond && !activeCategory.includes("bonds")) return false
+      if (!isbond && !activeCategory.includes("stocks")) return false
+    }
+    return true
+  })
 
   return (
     <Page>
@@ -75,8 +99,14 @@ export default async function AccountDetailPage({
       </SetHeader>
       <SetActions>
         <Suspense>
-          <AccountTypeFilter activeTypes={activeTypes} />
+          <AccountTypeFilter activeTypes={activeTypes} activeCategory={activeCategory} />
         </Suspense>
+        <Button asChild variant="outline">
+          <Link href={`/accounts/${id}/tesouro/new`}>
+            <LandmarkIcon className="size-4" />
+            Add Bond
+          </Link>
+        </Button>
         <Button asChild>
           <Link href={`/accounts/${id}/transactions/new`}>
             <PlusIcon className="size-4" />
@@ -172,7 +202,11 @@ export default async function AccountDetailPage({
                     <TableCell>
                       <Button variant="ghost" size="icon" asChild>
                         <Link
-                          href={`/accounts/${id}/transactions/${tx.id}`}
+                          href={
+                            isTesouroBond(tx.symbol)
+                              ? `/accounts/${id}/tesouro/${tx.id}`
+                              : `/accounts/${id}/transactions/${tx.id}`
+                          }
                           aria-label="Edit transaction"
                         >
                           <PencilIcon className="size-3.5" />

@@ -8,6 +8,7 @@ export const createTransactionSchema = z.object({
   quantity: z.coerce.number().positive("Quantity must be positive"),
   unitPrice: z.coerce.number().min(0, "Unit price cannot be negative"),
   fee: z.coerce.number().min(0, "Fee cannot be negative").default(0),
+  purchaseRate: z.number().min(0).nullable().optional(),
   nraTax: z.number().min(0).max(1).nullable().optional(),
   notes: z.string().max(500).optional(),
   reinvestDividends: z.boolean().default(false),

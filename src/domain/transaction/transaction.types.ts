@@ -11,6 +11,7 @@ export type Transaction = {
   quantity: number;
   unitPrice: number;
   fee: number;
+  purchaseRate: number | null;
   nraTax: number | null;
   notes: string | null;
   reinvestDividends: boolean;

@@ -35,6 +35,7 @@ model Transaction {
   quantity          Float
   unitPrice         Float
   fee               Float    @default(0)
+  purchaseRate      Float? // Contracted yield rate at purchase time (Tesouro Direto only, e.g. 6.12 for IPCA+6.12%)
   nraTax            Float? // Non-Resident Alien withholding tax rate (e.g. 0.3 = 30%)
   notes             String?
   reinvestDividends Boolean  @default(false) // DRIP: auto-reinvest dividends from this position
