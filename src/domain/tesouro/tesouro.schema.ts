@@ -10,7 +10,7 @@ import { z } from "zod";
  */
 export const createTesouroTransactionSchema = z.object({
   /** Human-readable bond title as returned by the Tesouro API, e.g. "Tesouro Selic 2029" */
-  bondTitle: z.string().min(1, "Bond title is required").max(200),
+  bondTitle: z.string().min(1, "Bond title is required"),
   type: z.enum(["BUY", "SELL"]),
   date: z.coerce.date(),
   /** Number of bond units (min 0.01 per Tesouro Direto rules) */

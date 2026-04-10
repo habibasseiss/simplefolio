@@ -17,9 +17,21 @@ export async function importDividendsAction(
 ): Promise<ImportDividendsResult> {
   const userId = await getDefaultUserId();
 
+  // When not overwriting, find the latest stored dividend date so we only fetch
+  // new dividends from the provider rather than the full history since 2000.
+  let fromDate: Date | undefined;
+  if (!overwrite) {
+    const latest = await prisma.transaction.findFirst({
+      where: { type: "DIVIDEND", symbol, account: { userId } },
+      orderBy: { date: "desc" },
+      select: { date: true },
+    });
+    if (latest?.date) fromDate = latest.date;
+  }
+
   let dividends;
   try {
-    dividends = await getFinanceProvider().getDividends(symbol);
+    dividends = await getFinanceProvider().getDividends(symbol, fromDate);
   } catch {
     return { inserted: 0, skipped: 0, error: "Failed to fetch dividends" };
   }
@@ -211,7 +223,8 @@ export async function importAllDividendsAction(
   overwrite = false,
 ): Promise<ImportAllDividendsResult> {
   const userId = await getDefaultUserId();
-  const symbols = await findAllSymbols(userId);
+  const allSymbols = await findAllSymbols(userId);
+  const symbols = allSymbols.filter((s) => !s.startsWith("TD:"));
 
   let inserted = 0;
   let skipped = 0;

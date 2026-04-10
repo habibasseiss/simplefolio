@@ -12,7 +12,10 @@ import {
 } from "@/domain/tesouro/tesouro.utils";
 import { fetchTesouroBonds } from "@/lib/tesouro";
 import { findAccountById } from "@/repositories/account.repository";
-import { upsertPriceHistory } from "@/repositories/price-history.repository";
+import {
+  findLatestPriceDate,
+  upsertPriceHistory,
+} from "@/repositories/price-history.repository";
 import { upsertSymbol } from "@/repositories/symbol.repository";
 import {
   createTransaction,
@@ -173,8 +176,9 @@ export async function syncTesouroPriceHistoryAction(): Promise<
     return { synced: 0, errors: [] };
   }
 
-  // For each bond, find the earliest BUY transaction date so we only fetch
-  // price history from that point forward
+  // For each bond, determine the fromDate:
+  // - Use the latest stored PriceHistory date if available (incremental sync)
+  // - Fall back to the earliest BUY transaction date for a first-time sync
   const earliestDateRows = await prisma.transaction.groupBy({
     by: ["symbol"],
     where: {
@@ -184,19 +188,30 @@ export async function syncTesouroPriceHistoryAction(): Promise<
     },
     _min: { date: true },
   });
-  const earliestDateMap = new Map(
+  const earliestBuyMap = new Map(
     earliestDateRows.map((r) => [
       r.symbol,
       r._min.date?.toISOString().split("T")[0] ?? undefined,
     ]),
   );
 
+  const latestPriceDates = await Promise.all(
+    bondSymbols.map(async (symbol) => {
+      const date = await findLatestPriceDate(symbol);
+      return [symbol, date?.toISOString().split("T")[0] ?? undefined] as const;
+    }),
+  );
+  const fromDateMap = new Map<string, string | undefined>([
+    ...earliestBuyMap,
+    ...latestPriceDates.filter(([, d]) => d !== undefined),
+  ]);
+
   let synced = 0;
   const errors: string[] = [];
 
   for (const symbol of bondSymbols) {
     const bondName = bondTickerToName(symbol);
-    const fromDate = earliestDateMap.get(symbol);
+    const fromDate = fromDateMap.get(symbol);
 
     // Paginate through all available historical quotes for this bond
     let allBonds: Awaited<ReturnType<typeof fetchTesouroBonds>>["data"] = [];

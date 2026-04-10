@@ -4,8 +4,11 @@ services:
     ports:
       - "3005:3000"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/simplefolio
+      DATABASE_URL: ${DATABASE_URL}
       CRON_SECRET: ${CRON_SECRET}
+      NRA_TAX: ${NRA_TAX}
+      CURRENCIES: ${CURRENCIES}
+      TESOURO_DIRETO_API_URL: ${TESOURO_DIRETO_API_URL}
     depends_on:
       db:
         condition: service_healthy
@@ -16,7 +19,7 @@ services:
     environment:
       CRON_SECRET: ${CRON_SECRET}
     command: >
-      sh -c "apk add --no-cache curl && echo '0 0 * * * /usr/bin/curl -fsSL -X POST -H \"Authorization: Bearer $$CRON_SECRET\" http://app:3000/api/cron/import-dividends' > /etc/crontabs/root && crond -f -l 8"
+      sh -c "apk add --no-cache curl && echo '0 0 * * * /usr/bin/curl -fsSL -X POST -H \"Authorization: Bearer $$CRON_SECRET\" http://app:3000/api/cron/sync' > /etc/crontabs/root && crond -f -l 8"
     depends_on:
       - app
     restart: unless-stopped

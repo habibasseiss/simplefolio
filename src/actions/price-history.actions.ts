@@ -1,5 +1,6 @@
 "use server";
 
+import { syncTesouroPriceHistoryAction } from "@/actions/tesouro.actions";
 import { getFinanceProvider } from "@/lib/finance";
 import {
   findLatestPriceDate,
@@ -54,14 +55,14 @@ export async function syncSymbolPriceHistoryAction(
 }
 
 /**
- * Syncs price history for every symbol in the user's portfolio.
- * Incremental — only fetches missing weeks per symbol.
+ * Syncs price history for every stock/ETF symbol (Yahoo Finance).
+ * TD: bonds are excluded — use syncTesouroPriceHistoryAction for those.
  */
-export async function syncAllPriceHistoryAction(): Promise<
-  SyncPriceHistoryResult
-> {
+async function syncStocksPriceHistoryAction(): Promise<SyncPriceHistoryResult> {
   const userId = await getDefaultUserId();
-  const symbols = await findAllSymbols(userId);
+  const allSymbols = await findAllSymbols(userId);
+  // TD: bonds are handled by syncTesouroPriceHistoryAction — skip them here
+  const symbols = allSymbols.filter((s) => !s.startsWith("TD:"));
 
   if (symbols.length === 0) {
     return { synced: 0, errors: [] };
@@ -93,4 +94,29 @@ export async function syncAllPriceHistoryAction(): Promise<
   }
 
   return { synced, errors };
+}
+
+/**
+ * Syncs price history for every symbol in the user's portfolio,
+ * including both stocks/ETFs (via Yahoo Finance) and Tesouro Direto bonds.
+ */
+export async function syncAllPriceHistoryAction(): Promise<
+  SyncPriceHistoryResult
+> {
+  const [stocks, tesouro] = await Promise.allSettled([
+    syncStocksPriceHistoryAction(),
+    syncTesouroPriceHistoryAction(),
+  ]);
+
+  const stocksResult = stocks.status === "fulfilled"
+    ? stocks.value
+    : { synced: 0, errors: [] as string[] };
+  const tesouroResult = tesouro.status === "fulfilled"
+    ? tesouro.value
+    : { synced: 0, errors: [] as string[] };
+
+  return {
+    synced: stocksResult.synced + tesouroResult.synced,
+    errors: [...stocksResult.errors, ...tesouroResult.errors],
+  };
 }

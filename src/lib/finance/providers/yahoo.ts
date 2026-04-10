@@ -42,10 +42,10 @@ export class YahooFinanceProvider implements FinanceProvider {
     }
   }
 
-  async getDividends(symbol: string): Promise<Dividend[]> {
+  async getDividends(symbol: string, fromDate?: Date): Promise<Dividend[]> {
     try {
       const data = await this.yf.chart(symbol, {
-        period1: "2000-01-01",
+        period1: fromDate ?? "2000-01-01",
         interval: "1mo",
         events: "div",
         return: "object",
@@ -108,7 +108,8 @@ export class YahooFinanceProvider implements FinanceProvider {
         name: quote.longName ?? quote.shortName ?? null,
         exchange: quote.fullExchangeName ?? null,
       };
-    } catch {
+    } catch (err) {
+      console.error(`[YahooFinance] getSymbolInfo error for ${ticker}:`, err);
       return { name: null, exchange: null };
     }
   }

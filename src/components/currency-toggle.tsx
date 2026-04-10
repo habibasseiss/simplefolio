@@ -38,7 +38,6 @@ export function CurrencyToggle({ currencies, activeCurrency }: CurrencyTogglePro
       value={activeCurrency}
       onValueChange={handleChange}
       variant="outline"
-      size="sm"
     >
       {currencies.map((c) => (
         <ToggleGroupItem key={c} value={c} className="text-xs font-medium">

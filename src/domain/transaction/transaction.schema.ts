@@ -3,7 +3,7 @@ import { TRANSACTION_TYPES } from "./transaction.types";
 
 export const createTransactionSchema = z.object({
   type: z.enum(TRANSACTION_TYPES),
-  symbol: z.string().min(1, "Symbol is required").max(20).toUpperCase(),
+  symbol: z.string().min(1, "Symbol is required").toUpperCase(),
   date: z.coerce.date(),
   quantity: z.coerce.number().positive("Quantity must be positive"),
   unitPrice: z.coerce.number().min(0, "Unit price cannot be negative"),

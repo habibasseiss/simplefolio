@@ -115,11 +115,11 @@ export function AllocationChart({
                 />
                 <Link
                   href={`/symbol/${item.symbol}`}
-                  className="font-mono font-semibold hover:underline"
+                  className="font-semibold hover:underline"
                 >
-                  {item.symbol}
+                  {item.symbol.startsWith("TD:") ? item.name : item.symbol}
                 </Link>
-                {item.name && (
+                {!item.symbol.startsWith("TD:") && item.name && (
                   <span className="truncate text-muted-foreground">
                     {item.name}
                   </span>

@@ -35,7 +35,7 @@ export interface SymbolSearchResult {
 
 export interface FinanceProvider {
   getGlobalQuote(symbol: string): Promise<GlobalQuote | null>;
-  getDividends(symbol: string): Promise<Dividend[]>;
+  getDividends(symbol: string, fromDate?: Date): Promise<Dividend[]>;
   /**
    * Fetch weekly adjusted-close prices from `fromDate` to today.
    * The caller is responsible for passing the date of the latest stored row

@@ -1,6 +1,10 @@
 "use server";
 
 import {
+  bondTickerToName,
+  isTesouroBond,
+} from "@/domain/tesouro/tesouro.utils";
+import {
   type CreateTransactionInput,
   createTransactionSchema,
 } from "@/domain/transaction/transaction.schema";
@@ -9,7 +13,7 @@ import {
   createAccount,
   findAccountByName,
 } from "@/repositories/account.repository";
-import { upsertSymbol } from "@/repositories/symbol.repository";
+import { ensureSymbol, upsertSymbol } from "@/repositories/symbol.repository";
 import { createTransaction } from "@/repositories/transaction.repository";
 import { getDefaultUserId } from "@/repositories/user.repository";
 
@@ -181,8 +185,20 @@ export async function batchImportAction(
     const provider = getFinanceProvider();
     await Promise.all(
       [...importedSymbols].map(async (ticker) => {
-        const { name, exchange } = await provider.getSymbolInfo(ticker);
-        await upsertSymbol(ticker, name, exchange);
+        if (isTesouroBond(ticker)) {
+          await upsertSymbol(
+            ticker,
+            bondTickerToName(ticker),
+            "Tesouro Direto",
+          );
+        } else {
+          const { name, exchange } = await provider.getSymbolInfo(ticker);
+          if (name !== null || exchange !== null) {
+            await upsertSymbol(ticker, name, exchange);
+          } else {
+            await ensureSymbol(ticker);
+          }
+        }
       }),
     );
   }
