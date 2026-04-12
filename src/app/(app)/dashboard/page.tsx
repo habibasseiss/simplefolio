@@ -3,6 +3,7 @@ import { CurrencyToggle } from "@/components/currency-toggle"
 import { DividendIncomeChart } from "@/components/dividend-income-chart"
 import { SetActions, SetHeader } from "@/components/header-context"
 import { Page } from "@/components/page"
+import { PortfolioStatsCard } from "@/components/portfolio-stats-card"
 import { PortfolioValueChart } from "@/components/portfolio-value-chart"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
 import {
@@ -41,6 +42,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Suspense } from "react"
+import { xirr, type CashFlow } from "@/lib/finance/xirr"
 
 // Currencies available for display — see src/lib/display-currencies.ts
 
@@ -208,6 +210,40 @@ export default async function DashboardPage({
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 10)
 
+  // ── Portfolio stats ───────────────────────────────────────────────────
+  // Use reduce instead of spread (Math.min(...large_array) can blow the stack)
+  const externalBuyTxs = allTransactions.filter((tx) => tx.type === "BUY" && !tx.isDrip)
+  const firstBuyTs = externalBuyTxs.length > 0
+    ? externalBuyTxs.reduce((min, tx) => {
+      const t = new Date(tx.date).getTime()
+      return t < min ? t : min
+    }, Infinity)
+    : null
+  const grossPerformance = d(totalPnlUsd + totalDividendsUsd)
+  
+  // Calculate XIRR for Annualized Return
+  const xirrCashFlows: CashFlow[] = []
+  for (const tx of allTransactions) {
+    const amountUsd = calcTransactionTotal(tx) * rate(tx.account.currency)
+    if (tx.type === "BUY" && !tx.isDrip) {
+      // Cash out of pocket into portfolio
+      xirrCashFlows.push({ amount: -amountUsd, date: new Date(tx.date) })
+    } else if (tx.type === "SELL") {
+      // Cash out of portfolio into pocket
+      xirrCashFlows.push({ amount: amountUsd, date: new Date(tx.date) })
+    } else if (tx.type === "DIVIDEND" && !tx.isDrip) {
+      // Cash dividend paid out to pocket
+      xirrCashFlows.push({ amount: amountUsd, date: new Date(tx.date) })
+    }
+  }
+  
+  // Current portfolio value acts as a final withdrawal cash flow
+  if (totalValueUsd > 0) {
+    xirrCashFlows.push({ amount: totalValueUsd, date: new Date() })
+  }
+  
+  const annualizedReturn = xirr(xirrCashFlows)
+
   const sortedPositions = [...positions].sort(
     (a, b) => (b.valueUsd ?? 0) - (a.valueUsd ?? 0),
   )
@@ -331,7 +367,17 @@ export default async function DashboardPage({
           {/* ── Allocation + Dividend Income ─────────────────────── */}
           <div className="grid gap-4 lg:grid-cols-2">
             <AllocationChart data={allocationData} currency={displayCurrency} />
-            <DividendIncomeChart data={dividendYearData} currency={displayCurrency} />
+            <div className="flex flex-col gap-4">
+              <DividendIncomeChart data={dividendYearData} currency={displayCurrency} />
+              <PortfolioStatsCard
+                firstInvestmentTs={firstBuyTs}
+                investment={totalCost}
+                grossPerformance={grossPerformance}
+                netWorth={totalValue}
+                annualizedReturn={annualizedReturn}
+                currency={displayCurrency}
+              />
+            </div>
           </div>
 
           {/* ── Positions Table ───────────────────────────────────── */}
@@ -371,10 +417,10 @@ export default async function DashboardPage({
                           href={`/symbol/${p.symbol}`}
                           className="hover:underline"
                         >
-                          <span className="font-mono font-semibold">
-                            {p.symbol}
+                          <span className="font-semibold">
+                            {p.symbol.startsWith("TD:") ? p.name : p.symbol}
                           </span>
-                          {p.name && (
+                          {!p.symbol.startsWith("TD:") && p.name && (
                             <span className="block text-xs text-muted-foreground">
                               {p.name}
                             </span>

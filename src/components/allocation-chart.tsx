@@ -13,6 +13,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { bondTickerToName } from "@/domain/tesouro/tesouro.utils"
 import { getCurrencyLocale } from "@/lib/format"
 import Link from "next/link"
 import { Cell, Pie, PieChart } from "recharts"
@@ -32,10 +33,36 @@ interface AllocationChartProps {
 // 10-slot color palette cycling through chart CSS variables
 const COLORS = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5].map((n) => `var(--chart-${n})`)
 
+/** Combines TD: bond variants (e.g. TD:TESOURO_IPCA+_2029 + _2035) into one entry per base type. */
+function groupTesouroBonds(data: AllocationItem[]): AllocationItem[] {
+  const result = new Map<string, AllocationItem>()
+  for (const item of data) {
+    if (item.symbol.startsWith("TD:")) {
+      const baseSymbol = item.symbol.replace(/_\d{4}$/, "")
+      const existing = result.get(baseSymbol)
+      if (existing) {
+        existing.value += item.value
+        existing.pct += item.pct
+      } else {
+        result.set(baseSymbol, {
+          symbol: baseSymbol,
+          name: item.name ? item.name.replace(/\s+\d{4}$/, "") : bondTickerToName(baseSymbol),
+          value: item.value,
+          pct: item.pct,
+        })
+      }
+    } else {
+      result.set(item.symbol, { ...item })
+    }
+  }
+  return Array.from(result.values())
+}
+
 export function AllocationChart({
   data,
   currency = "USD",
 }: AllocationChartProps) {
+  const grouped = groupTesouroBonds(data)
   const fmt = new Intl.NumberFormat(getCurrencyLocale(currency), {
     style: "currency",
     currency,
@@ -44,13 +71,13 @@ export function AllocationChart({
 
 
   const chartConfig: ChartConfig = Object.fromEntries(
-    data.map((item, i) => [
+    grouped.map((item, i) => [
       item.symbol,
       { label: item.symbol, color: COLORS[i % COLORS.length] },
     ]),
   )
 
-  if (data.length === 0) {
+  if (grouped.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -89,13 +116,13 @@ export function AllocationChart({
               }
             />
             <Pie
-              data={data}
+              data={grouped}
               dataKey="value"
               nameKey="symbol"
               innerRadius="56%"
               strokeWidth={2}
             >
-              {data.map((_, i) => (
+              {grouped.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
             </Pie>
@@ -103,7 +130,7 @@ export function AllocationChart({
         </ChartContainer>
 
         <div className="mt-4 space-y-2">
-          {data.map((item, i) => (
+          {grouped.map((item, i) => (
             <div
               key={item.symbol}
               className="flex items-center justify-between gap-2 text-sm"
@@ -114,7 +141,11 @@ export function AllocationChart({
                   style={{ backgroundColor: COLORS[i % COLORS.length] }}
                 />
                 <Link
-                  href={`/symbol/${item.symbol}`}
+                  href={
+                    item.symbol.startsWith("TD:") && !/_\d{4}$/.test(item.symbol)
+                      ? "/holdings"
+                      : `/symbol/${item.symbol}`
+                  }
                   className="font-semibold hover:underline"
                 >
                   {item.symbol.startsWith("TD:") ? item.name : item.symbol}

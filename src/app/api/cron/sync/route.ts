@@ -15,14 +15,18 @@ export async function POST(req: NextRequest) {
       syncAllPriceHistoryAction(),
     ]);
 
-    return NextResponse.json({
+    const result = {
       dividends: dividends.status === "fulfilled"
         ? dividends.value
         : { error: String(dividends.reason) },
       prices: prices.status === "fulfilled"
         ? prices.value
         : { error: String(prices.reason) },
-    });
+    };
+
+    console.log("Cron job result:", result);
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Cron job failed:", error);
     return NextResponse.json(
