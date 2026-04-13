@@ -11,7 +11,7 @@ export interface PortfolioStatsProps {
   grossPerformance: number
   /** Current portfolio value in display currency */
   netWorth: number
-  /** Pre-computed CAGR: Math.pow(totalReturnFactor, 1/yearsInMarket) - 1 */
+  /** Pre-computed XIRR (money-weighted annualized return), or null if it cannot be calculated */
   annualizedReturn: number | null
   currency: string
 }

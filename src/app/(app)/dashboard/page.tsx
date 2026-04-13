@@ -42,7 +42,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Suspense } from "react"
-import { xirr, type CashFlow } from "@/lib/finance/xirr"
+import { buildXirrCashFlows } from "@/lib/finance/cashflows"
+import { xirr } from "@/lib/finance/xirr"
 
 // Currencies available for display — see src/lib/display-currencies.ts
 
@@ -222,26 +223,7 @@ export default async function DashboardPage({
   const grossPerformance = d(totalPnlUsd + totalDividendsUsd)
   
   // Calculate XIRR for Annualized Return
-  const xirrCashFlows: CashFlow[] = []
-  for (const tx of allTransactions) {
-    const amountUsd = calcTransactionTotal(tx) * rate(tx.account.currency)
-    if (tx.type === "BUY" && !tx.isDrip) {
-      // Cash out of pocket into portfolio
-      xirrCashFlows.push({ amount: -amountUsd, date: new Date(tx.date) })
-    } else if (tx.type === "SELL") {
-      // Cash out of portfolio into pocket
-      xirrCashFlows.push({ amount: amountUsd, date: new Date(tx.date) })
-    } else if (tx.type === "DIVIDEND" && !tx.isDrip) {
-      // Cash dividend paid out to pocket
-      xirrCashFlows.push({ amount: amountUsd, date: new Date(tx.date) })
-    }
-  }
-  
-  // Current portfolio value acts as a final withdrawal cash flow
-  if (totalValueUsd > 0) {
-    xirrCashFlows.push({ amount: totalValueUsd, date: new Date() })
-  }
-  
+  const xirrCashFlows = buildXirrCashFlows(allTransactions, rate, totalValueUsd)
   const annualizedReturn = xirr(xirrCashFlows)
 
   const sortedPositions = [...positions].sort(
