@@ -2,7 +2,8 @@ import { SetHeader } from "@/components/header-context"
 import { ImportAllDividendsButton } from "@/components/import-all-dividends-button"
 import { Page } from "@/components/page"
 import { SyncPriceHistoryButton } from "@/components/sync-price-history-button"
-import { ArrowRightIcon, BarChart2Icon, DownloadIcon, RefreshCwIcon, UploadIcon } from "lucide-react"
+import { ClearCacheButton } from "@/components/clear-cache-button"
+import { ArrowRightIcon, BarChart2Icon, DownloadIcon, EraserIcon, RefreshCwIcon, UploadIcon } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -90,6 +91,24 @@ export default function SettingsPage() {
                     </p>
                   </div>
                   <SyncPriceHistoryButton />
+                </div>
+              </div>
+            </div>
+
+            {/* Clear Cache — inline action */}
+            <div className="rounded-lg border p-4">
+              <div className="flex items-start gap-3">
+                <EraserIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                <div className="flex flex-1 flex-col gap-3">
+                  <div>
+                    <p className="text-sm font-medium">Clear Application Cache</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      Clears the Next.js server cache. This ensures you see the latest data across all pages if you notice stale information.
+                    </p>
+                  </div>
+                  <div className="flex">
+                    <ClearCacheButton />
+                  </div>
                 </div>
               </div>
             </div>

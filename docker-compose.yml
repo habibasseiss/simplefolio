@@ -30,8 +30,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: simplefolio
-    ports:
-      - "5432:5432"
     volumes:
       - ./database:/var/lib/postgresql/data
     healthcheck:
