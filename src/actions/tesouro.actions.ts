@@ -21,6 +21,7 @@ import {
   createTransaction,
   deleteTransaction,
   findAllSymbols,
+  findTransactionById,
   updateTransaction,
 } from "@/repositories/transaction.repository";
 import { getDefaultUserId } from "@/repositories/user.repository";
@@ -48,10 +49,12 @@ async function assertAccountOwnership(
  * repository used by regular stock transactions.
  */
 export async function createTesouroTransactionAction(
-  accountId: string,
+  routeAccountId: string,
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
+  const targetAccountId = (formData.get("accountId") as string) ||
+    routeAccountId;
   const parsed = createTesouroTransactionSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -60,12 +63,12 @@ export async function createTesouroTransactionAction(
   }
 
   const userId = await getDefaultUserId();
-  await assertAccountOwnership(accountId, userId);
+  await assertAccountOwnership(targetAccountId, userId);
 
   const { bondTitle, ...rest } = parsed.data;
   const symbol = bondTicker(bondTitle);
 
-  await createTransaction(accountId, {
+  await createTransaction(targetAccountId, {
     ...rest,
     symbol,
     // Defaults not applicable to bonds
@@ -81,19 +84,25 @@ export async function createTesouroTransactionAction(
   // Eagerly sync PU price history so the symbol page shows data immediately
   // await syncTesouroPriceHistoryAction();
 
-  revalidatePath(`/accounts/${accountId}`);
-  redirect(`/accounts/${accountId}`);
+  revalidatePath(`/accounts/${targetAccountId}`);
+  redirect(`/accounts/${targetAccountId}`);
 }
 
 /**
  * Updates an existing Tesouro Direto bond transaction.
  */
 export async function updateTesouroTransactionAction(
-  accountId: string,
   txId: string,
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
+  const userId = await getDefaultUserId();
+  const existing = await findTransactionById(txId, userId);
+  if (!existing) return { error: "Transaction not found" };
+  const originalAccountId = existing.accountId;
+
+  const targetAccountId = (formData.get("accountId") as string) ||
+    originalAccountId;
   const parsed = updateTesouroTransactionSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -101,34 +110,39 @@ export async function updateTesouroTransactionAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const userId = await getDefaultUserId();
-  await assertAccountOwnership(accountId, userId);
+  await assertAccountOwnership(targetAccountId, userId);
 
   const { bondTitle, ...rest } = parsed.data;
   const symbol = bondTitle ? bondTicker(bondTitle) : undefined;
 
-  await updateTransaction(txId, accountId, {
+  await updateTransaction(txId, originalAccountId, {
     ...rest,
     ...(symbol ? { symbol } : {}),
+    accountId: targetAccountId,
   });
 
   if (symbol && bondTitle) {
     await upsertSymbol(symbol, bondTitle, "Tesouro Direto");
   }
 
-  revalidatePath(`/accounts/${accountId}`);
-  redirect(`/accounts/${accountId}`);
+  revalidatePath(`/accounts/${targetAccountId}`);
+  if (targetAccountId !== originalAccountId) {
+    revalidatePath(`/accounts/${originalAccountId}`);
+  }
+  redirect(`/accounts/${targetAccountId}`);
 }
 
 /**
  * Deletes a Tesouro Direto bond transaction (same as regular transactions).
  */
 export async function deleteTesouroTransactionAction(
-  accountId: string,
   txId: string,
 ): Promise<ActionResult> {
   const userId = await getDefaultUserId();
-  await assertAccountOwnership(accountId, userId);
+  const existing = await findTransactionById(txId, userId);
+  if (!existing) return { error: "Transaction not found" };
+  const accountId = existing.accountId;
+
   await deleteTransaction(txId, accountId);
 
   revalidatePath(`/accounts/${accountId}`);

@@ -30,9 +30,10 @@ export async function findTransactionsBySymbol(
   }) as Promise<TransactionWithAccount[]>;
 }
 
-export async function findTransactionById(id: string, accountId: string) {
+export async function findTransactionById(id: string, userId: string) {
   return prisma.transaction.findFirst({
-    where: { id, accountId },
+    where: { id, account: { userId } },
+    include: { account: { select: { id: true, name: true, currency: true } } },
   });
 }
 
@@ -48,7 +49,7 @@ export async function createTransaction(
 export async function updateTransaction(
   id: string,
   accountId: string,
-  data: UpdateTransactionInput,
+  data: UpdateTransactionInput & { accountId?: string },
 ) {
   return prisma.transaction.update({
     where: { id, accountId },

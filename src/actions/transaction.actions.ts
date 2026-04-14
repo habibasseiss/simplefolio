@@ -10,6 +10,7 @@ import { upsertSymbol } from "@/repositories/symbol.repository";
 import {
   createTransaction,
   deleteTransaction,
+  findTransactionById,
   updateTransaction,
 } from "@/repositories/transaction.repository";
 import { getDefaultUserId } from "@/repositories/user.repository";
@@ -26,10 +27,12 @@ async function assertAccountOwnership(
 }
 
 export async function createTransactionAction(
-  accountId: string,
+  routeAccountId: string,
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
+  const targetAccountId = (formData.get("accountId") as string) ||
+    routeAccountId;
   const applyNraTax = formData.get("applyNraTax") === "on";
   const nraTax = applyNraTax && process.env.NRA_TAX
     ? parseFloat(process.env.NRA_TAX)
@@ -46,24 +49,30 @@ export async function createTransactionAction(
   }
 
   const userId = await getDefaultUserId();
-  await assertAccountOwnership(accountId, userId);
-  await createTransaction(accountId, parsed.data);
+  await assertAccountOwnership(targetAccountId, userId);
+  await createTransaction(targetAccountId, parsed.data);
 
   const { name, exchange } = await getFinanceProvider().getSymbolInfo(
     parsed.data.symbol,
   );
   await upsertSymbol(parsed.data.symbol, name, exchange);
 
-  revalidatePath(`/accounts/${accountId}`);
-  redirect(`/accounts/${accountId}`);
+  revalidatePath(`/accounts/${targetAccountId}`);
+  redirect(`/accounts/${targetAccountId}`);
 }
 
 export async function updateTransactionAction(
-  accountId: string,
   txId: string,
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
+  const userId = await getDefaultUserId();
+  const existing = await findTransactionById(txId, userId);
+  if (!existing) return { error: "Transaction not found" };
+  const originalAccountId = existing.accountId;
+
+  const targetAccountId = (formData.get("accountId") as string) ||
+    originalAccountId;
   const applyNraTax = formData.get("applyNraTax") === "on";
   const nraTax = applyNraTax && process.env.NRA_TAX
     ? parseFloat(process.env.NRA_TAX)
@@ -79,9 +88,11 @@ export async function updateTransactionAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const userId = await getDefaultUserId();
-  await assertAccountOwnership(accountId, userId);
-  await updateTransaction(txId, accountId, parsed.data);
+  await assertAccountOwnership(targetAccountId, userId);
+  await updateTransaction(txId, originalAccountId, {
+    ...parsed.data,
+    accountId: targetAccountId,
+  });
 
   if (parsed.data.symbol) {
     const { name, exchange } = await getFinanceProvider().getSymbolInfo(
@@ -90,16 +101,21 @@ export async function updateTransactionAction(
     await upsertSymbol(parsed.data.symbol, name, exchange);
   }
 
-  revalidatePath(`/accounts/${accountId}`);
-  redirect(`/accounts/${accountId}`);
+  revalidatePath(`/accounts/${targetAccountId}`);
+  if (targetAccountId !== originalAccountId) {
+    revalidatePath(`/accounts/${originalAccountId}`);
+  }
+  redirect(`/accounts/${targetAccountId}`);
 }
 
 export async function deleteTransactionAction(
-  accountId: string,
   txId: string,
 ): Promise<ActionResult> {
   const userId = await getDefaultUserId();
-  await assertAccountOwnership(accountId, userId);
+  const existing = await findTransactionById(txId, userId);
+  if (!existing) return { error: "Transaction not found" };
+  const accountId = existing.accountId;
+
   await deleteTransaction(txId, accountId);
 
   revalidatePath(`/accounts/${accountId}`);

@@ -22,7 +22,6 @@ import { findTransactionsByAccountId } from "@/repositories/transaction.reposito
 import { getDefaultUserId } from "@/repositories/user.repository"
 import {
   DollarSignIcon,
-  LandmarkIcon,
   MinusIcon,
   PencilIcon,
   PlusIcon
@@ -101,12 +100,6 @@ export default async function AccountDetailPage({
         <Suspense>
           <AccountTypeFilter activeTypes={activeTypes} activeCategory={activeCategory} />
         </Suspense>
-        <Button asChild variant="outline">
-          <Link href={`/accounts/${id}/tesouro/new`}>
-            <LandmarkIcon className="size-4" />
-            Add Bond
-          </Link>
-        </Button>
         <Button asChild>
           <Link href={`/accounts/${id}/transactions/new`}>
             <PlusIcon className="size-4" />
@@ -204,8 +197,8 @@ export default async function AccountDetailPage({
                         <Link
                           href={
                             isTesouroBond(tx.symbol)
-                              ? `/accounts/${id}/tesouro/${tx.id}`
-                              : `/accounts/${id}/transactions/${tx.id}`
+                              ? `/tesouro/${tx.id}`
+                              : `/transactions/${tx.id}`
                           }
                           aria-label="Edit transaction"
                         >

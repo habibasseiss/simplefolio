@@ -17,6 +17,8 @@ function toDateInputValue(date: Date | string | undefined) {
 interface TransactionFormProps {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>
   defaultValues?: Partial<Transaction>
+  accounts?: { id: string; name: string }[]
+  defaultAccountId?: string
   submitLabel?: string
   nraTaxRate?: number | null
 }
@@ -24,6 +26,8 @@ interface TransactionFormProps {
 export function TransactionForm({
   action,
   defaultValues,
+  accounts,
+  defaultAccountId,
   submitLabel = "Save",
   nraTaxRate,
 }: TransactionFormProps) {
@@ -33,7 +37,28 @@ export function TransactionForm({
   )
 
   return (
-    <form action={formAction} className="flex flex-col gap-6 max-w-md">
+    <form action={formAction} className="flex flex-col gap-6">
+      {accounts && accounts.length > 1 && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="accountId">Account</Label>
+          <select
+            id="accountId"
+            name="accountId"
+            defaultValue={defaultAccountId}
+            className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            {accounts.map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name}
+              </option>
+            ))}
+          </select>
+          {state.fieldErrors?.accountId && (
+            <p className="text-sm text-destructive">{state.fieldErrors.accountId[0]}</p>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         <Label htmlFor="type">Type</Label>
         <select
@@ -41,7 +66,7 @@ export function TransactionForm({
           name="type"
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value as typeof selectedType)}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
           {TRANSACTION_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -119,7 +144,9 @@ export function TransactionForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="fee">Fee (optional)</Label>
+        <Label htmlFor="fee">
+          {selectedType === "SELL" ? "Fee / Tax (optional)" : "Fee (optional)"}
+        </Label>
         <Input
           id="fee"
           name="fee"

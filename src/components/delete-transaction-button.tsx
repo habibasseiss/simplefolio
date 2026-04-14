@@ -6,10 +6,8 @@ import { Trash2Icon } from "lucide-react"
 import { useTransition } from "react"
 
 export function DeleteTransactionButton({
-  accountId,
   txId,
 }: {
-  accountId: string
   txId: string
 }) {
   const [isPending, startTransition] = useTransition()
@@ -17,7 +15,7 @@ export function DeleteTransactionButton({
   function handleDelete() {
     if (!confirm("Delete this transaction? This cannot be undone.")) return
     startTransition(async () => {
-      await deleteTransactionAction(accountId, txId)
+      await deleteTransactionAction(txId)
     })
   }
 
