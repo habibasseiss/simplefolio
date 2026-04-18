@@ -70,11 +70,11 @@ describe("Transaction Actions", () => {
           unitPrice: 150,
         }),
       );
-      expect(symbolRepo.upsertSymbol).toHaveBeenCalledWith(
-        "AAPL",
-        "Apple Inc.",
-        "NASDAQ",
-      );
+      expect(symbolRepo.upsertSymbol).toHaveBeenCalledWith({
+        ticker: "AAPL",
+        name: "Apple Inc.",
+        exchange: "NASDAQ",
+      });
       expect(cache.revalidatePath).toHaveBeenCalledWith("/accounts/acc-1");
     });
 

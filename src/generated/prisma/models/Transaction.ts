@@ -46,6 +46,8 @@ export type TransactionMinAggregateOutputType = {
   id: string | null
   type: string | null
   symbol: string | null
+  instrumentType: string | null
+  instrumentProvider: string | null
   date: Date | null
   quantity: number | null
   unitPrice: number | null
@@ -64,6 +66,8 @@ export type TransactionMaxAggregateOutputType = {
   id: string | null
   type: string | null
   symbol: string | null
+  instrumentType: string | null
+  instrumentProvider: string | null
   date: Date | null
   quantity: number | null
   unitPrice: number | null
@@ -82,6 +86,8 @@ export type TransactionCountAggregateOutputType = {
   id: number
   type: number
   symbol: number
+  instrumentType: number
+  instrumentProvider: number
   date: number
   quantity: number
   unitPrice: number
@@ -118,6 +124,8 @@ export type TransactionMinAggregateInputType = {
   id?: true
   type?: true
   symbol?: true
+  instrumentType?: true
+  instrumentProvider?: true
   date?: true
   quantity?: true
   unitPrice?: true
@@ -136,6 +144,8 @@ export type TransactionMaxAggregateInputType = {
   id?: true
   type?: true
   symbol?: true
+  instrumentType?: true
+  instrumentProvider?: true
   date?: true
   quantity?: true
   unitPrice?: true
@@ -154,6 +164,8 @@ export type TransactionCountAggregateInputType = {
   id?: true
   type?: true
   symbol?: true
+  instrumentType?: true
+  instrumentProvider?: true
   date?: true
   quantity?: true
   unitPrice?: true
@@ -259,6 +271,8 @@ export type TransactionGroupByOutputType = {
   id: string
   type: string
   symbol: string
+  instrumentType: string
+  instrumentProvider: string
   date: Date
   quantity: number
   unitPrice: number
@@ -300,6 +314,8 @@ export type TransactionWhereInput = {
   id?: Prisma.StringFilter<"Transaction"> | string
   type?: Prisma.StringFilter<"Transaction"> | string
   symbol?: Prisma.StringFilter<"Transaction"> | string
+  instrumentType?: Prisma.StringFilter<"Transaction"> | string
+  instrumentProvider?: Prisma.StringFilter<"Transaction"> | string
   date?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   quantity?: Prisma.FloatFilter<"Transaction"> | number
   unitPrice?: Prisma.FloatFilter<"Transaction"> | number
@@ -319,6 +335,8 @@ export type TransactionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
@@ -341,6 +359,8 @@ export type TransactionWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.TransactionWhereInput | Prisma.TransactionWhereInput[]
   type?: Prisma.StringFilter<"Transaction"> | string
   symbol?: Prisma.StringFilter<"Transaction"> | string
+  instrumentType?: Prisma.StringFilter<"Transaction"> | string
+  instrumentProvider?: Prisma.StringFilter<"Transaction"> | string
   date?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   quantity?: Prisma.FloatFilter<"Transaction"> | number
   unitPrice?: Prisma.FloatFilter<"Transaction"> | number
@@ -360,6 +380,8 @@ export type TransactionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
@@ -386,6 +408,8 @@ export type TransactionScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   type?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   symbol?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
+  instrumentType?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
+  instrumentProvider?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   date?: Prisma.DateTimeWithAggregatesFilter<"Transaction"> | Date | string
   quantity?: Prisma.FloatWithAggregatesFilter<"Transaction"> | number
   unitPrice?: Prisma.FloatWithAggregatesFilter<"Transaction"> | number
@@ -404,6 +428,8 @@ export type TransactionCreateInput = {
   id?: string
   type: string
   symbol: string
+  instrumentType?: string
+  instrumentProvider?: string
   date: Date | string
   quantity: number
   unitPrice: number
@@ -422,6 +448,8 @@ export type TransactionUncheckedCreateInput = {
   id?: string
   type: string
   symbol: string
+  instrumentType?: string
+  instrumentProvider?: string
   date: Date | string
   quantity: number
   unitPrice: number
@@ -440,6 +468,8 @@ export type TransactionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -458,6 +488,8 @@ export type TransactionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -476,6 +508,8 @@ export type TransactionCreateManyInput = {
   id?: string
   type: string
   symbol: string
+  instrumentType?: string
+  instrumentProvider?: string
   date: Date | string
   quantity: number
   unitPrice: number
@@ -494,6 +528,8 @@ export type TransactionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -511,6 +547,8 @@ export type TransactionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -539,6 +577,8 @@ export type TransactionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
@@ -565,6 +605,8 @@ export type TransactionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
@@ -583,6 +625,8 @@ export type TransactionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
@@ -675,6 +719,8 @@ export type TransactionCreateWithoutAccountInput = {
   id?: string
   type: string
   symbol: string
+  instrumentType?: string
+  instrumentProvider?: string
   date: Date | string
   quantity: number
   unitPrice: number
@@ -692,6 +738,8 @@ export type TransactionUncheckedCreateWithoutAccountInput = {
   id?: string
   type: string
   symbol: string
+  instrumentType?: string
+  instrumentProvider?: string
   date: Date | string
   quantity: number
   unitPrice: number
@@ -738,6 +786,8 @@ export type TransactionScalarWhereInput = {
   id?: Prisma.StringFilter<"Transaction"> | string
   type?: Prisma.StringFilter<"Transaction"> | string
   symbol?: Prisma.StringFilter<"Transaction"> | string
+  instrumentType?: Prisma.StringFilter<"Transaction"> | string
+  instrumentProvider?: Prisma.StringFilter<"Transaction"> | string
   date?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   quantity?: Prisma.FloatFilter<"Transaction"> | number
   unitPrice?: Prisma.FloatFilter<"Transaction"> | number
@@ -756,6 +806,8 @@ export type TransactionCreateManyAccountInput = {
   id?: string
   type: string
   symbol: string
+  instrumentType?: string
+  instrumentProvider?: string
   date: Date | string
   quantity: number
   unitPrice: number
@@ -773,6 +825,8 @@ export type TransactionUpdateWithoutAccountInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -790,6 +844,8 @@ export type TransactionUncheckedUpdateWithoutAccountInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -807,6 +863,8 @@ export type TransactionUncheckedUpdateManyWithoutAccountInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unitPrice?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -826,6 +884,8 @@ export type TransactionSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   id?: boolean
   type?: boolean
   symbol?: boolean
+  instrumentType?: boolean
+  instrumentProvider?: boolean
   date?: boolean
   quantity?: boolean
   unitPrice?: boolean
@@ -845,6 +905,8 @@ export type TransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   id?: boolean
   type?: boolean
   symbol?: boolean
+  instrumentType?: boolean
+  instrumentProvider?: boolean
   date?: boolean
   quantity?: boolean
   unitPrice?: boolean
@@ -864,6 +926,8 @@ export type TransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   id?: boolean
   type?: boolean
   symbol?: boolean
+  instrumentType?: boolean
+  instrumentProvider?: boolean
   date?: boolean
   quantity?: boolean
   unitPrice?: boolean
@@ -883,6 +947,8 @@ export type TransactionSelectScalar = {
   id?: boolean
   type?: boolean
   symbol?: boolean
+  instrumentType?: boolean
+  instrumentProvider?: boolean
   date?: boolean
   quantity?: boolean
   unitPrice?: boolean
@@ -897,7 +963,7 @@ export type TransactionSelectScalar = {
   updatedAt?: boolean
 }
 
-export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "symbol" | "date" | "quantity" | "unitPrice" | "fee" | "purchaseRate" | "nraTax" | "notes" | "reinvestDividends" | "isDrip" | "accountId" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
+export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "symbol" | "instrumentType" | "instrumentProvider" | "date" | "quantity" | "unitPrice" | "fee" | "purchaseRate" | "nraTax" | "notes" | "reinvestDividends" | "isDrip" | "accountId" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
 export type TransactionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   account?: boolean | Prisma.AccountDefaultArgs<ExtArgs>
 }
@@ -917,6 +983,8 @@ export type $TransactionPayload<ExtArgs extends runtime.Types.Extensions.Interna
     id: string
     type: string
     symbol: string
+    instrumentType: string
+    instrumentProvider: string
     date: Date
     quantity: number
     unitPrice: number
@@ -1356,6 +1424,8 @@ export interface TransactionFieldRefs {
   readonly id: Prisma.FieldRef<"Transaction", 'String'>
   readonly type: Prisma.FieldRef<"Transaction", 'String'>
   readonly symbol: Prisma.FieldRef<"Transaction", 'String'>
+  readonly instrumentType: Prisma.FieldRef<"Transaction", 'String'>
+  readonly instrumentProvider: Prisma.FieldRef<"Transaction", 'String'>
   readonly date: Prisma.FieldRef<"Transaction", 'DateTime'>
   readonly quantity: Prisma.FieldRef<"Transaction", 'Float'>
   readonly unitPrice: Prisma.FieldRef<"Transaction", 'Float'>

@@ -28,18 +28,24 @@ export type SymbolMinAggregateOutputType = {
   ticker: string | null
   name: string | null
   exchange: string | null
+  instrumentType: string | null
+  instrumentProvider: string | null
 }
 
 export type SymbolMaxAggregateOutputType = {
   ticker: string | null
   name: string | null
   exchange: string | null
+  instrumentType: string | null
+  instrumentProvider: string | null
 }
 
 export type SymbolCountAggregateOutputType = {
   ticker: number
   name: number
   exchange: number
+  instrumentType: number
+  instrumentProvider: number
   _all: number
 }
 
@@ -48,18 +54,24 @@ export type SymbolMinAggregateInputType = {
   ticker?: true
   name?: true
   exchange?: true
+  instrumentType?: true
+  instrumentProvider?: true
 }
 
 export type SymbolMaxAggregateInputType = {
   ticker?: true
   name?: true
   exchange?: true
+  instrumentType?: true
+  instrumentProvider?: true
 }
 
 export type SymbolCountAggregateInputType = {
   ticker?: true
   name?: true
   exchange?: true
+  instrumentType?: true
+  instrumentProvider?: true
   _all?: true
 }
 
@@ -139,6 +151,8 @@ export type SymbolGroupByOutputType = {
   ticker: string
   name: string | null
   exchange: string | null
+  instrumentType: string
+  instrumentProvider: string
   _count: SymbolCountAggregateOutputType | null
   _min: SymbolMinAggregateOutputType | null
   _max: SymbolMaxAggregateOutputType | null
@@ -166,12 +180,16 @@ export type SymbolWhereInput = {
   ticker?: Prisma.StringFilter<"Symbol"> | string
   name?: Prisma.StringNullableFilter<"Symbol"> | string | null
   exchange?: Prisma.StringNullableFilter<"Symbol"> | string | null
+  instrumentType?: Prisma.StringFilter<"Symbol"> | string
+  instrumentProvider?: Prisma.StringFilter<"Symbol"> | string
 }
 
 export type SymbolOrderByWithRelationInput = {
   ticker?: Prisma.SortOrder
   name?: Prisma.SortOrderInput | Prisma.SortOrder
   exchange?: Prisma.SortOrderInput | Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
 }
 
 export type SymbolWhereUniqueInput = Prisma.AtLeast<{
@@ -181,12 +199,16 @@ export type SymbolWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.SymbolWhereInput | Prisma.SymbolWhereInput[]
   name?: Prisma.StringNullableFilter<"Symbol"> | string | null
   exchange?: Prisma.StringNullableFilter<"Symbol"> | string | null
+  instrumentType?: Prisma.StringFilter<"Symbol"> | string
+  instrumentProvider?: Prisma.StringFilter<"Symbol"> | string
 }, "ticker">
 
 export type SymbolOrderByWithAggregationInput = {
   ticker?: Prisma.SortOrder
   name?: Prisma.SortOrderInput | Prisma.SortOrder
   exchange?: Prisma.SortOrderInput | Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   _count?: Prisma.SymbolCountOrderByAggregateInput
   _max?: Prisma.SymbolMaxOrderByAggregateInput
   _min?: Prisma.SymbolMinOrderByAggregateInput
@@ -199,66 +221,88 @@ export type SymbolScalarWhereWithAggregatesInput = {
   ticker?: Prisma.StringWithAggregatesFilter<"Symbol"> | string
   name?: Prisma.StringNullableWithAggregatesFilter<"Symbol"> | string | null
   exchange?: Prisma.StringNullableWithAggregatesFilter<"Symbol"> | string | null
+  instrumentType?: Prisma.StringWithAggregatesFilter<"Symbol"> | string
+  instrumentProvider?: Prisma.StringWithAggregatesFilter<"Symbol"> | string
 }
 
 export type SymbolCreateInput = {
   ticker: string
   name?: string | null
   exchange?: string | null
+  instrumentType?: string
+  instrumentProvider?: string
 }
 
 export type SymbolUncheckedCreateInput = {
   ticker: string
   name?: string | null
   exchange?: string | null
+  instrumentType?: string
+  instrumentProvider?: string
 }
 
 export type SymbolUpdateInput = {
   ticker?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   exchange?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type SymbolUncheckedUpdateInput = {
   ticker?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   exchange?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type SymbolCreateManyInput = {
   ticker: string
   name?: string | null
   exchange?: string | null
+  instrumentType?: string
+  instrumentProvider?: string
 }
 
 export type SymbolUpdateManyMutationInput = {
   ticker?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   exchange?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type SymbolUncheckedUpdateManyInput = {
   ticker?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   exchange?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  instrumentType?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type SymbolCountOrderByAggregateInput = {
   ticker?: Prisma.SortOrder
   name?: Prisma.SortOrder
   exchange?: Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
 }
 
 export type SymbolMaxOrderByAggregateInput = {
   ticker?: Prisma.SortOrder
   name?: Prisma.SortOrder
   exchange?: Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
 }
 
 export type SymbolMinOrderByAggregateInput = {
   ticker?: Prisma.SortOrder
   name?: Prisma.SortOrder
   exchange?: Prisma.SortOrder
+  instrumentType?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
 }
 
 
@@ -267,27 +311,35 @@ export type SymbolSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   ticker?: boolean
   name?: boolean
   exchange?: boolean
+  instrumentType?: boolean
+  instrumentProvider?: boolean
 }, ExtArgs["result"]["symbol"]>
 
 export type SymbolSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   ticker?: boolean
   name?: boolean
   exchange?: boolean
+  instrumentType?: boolean
+  instrumentProvider?: boolean
 }, ExtArgs["result"]["symbol"]>
 
 export type SymbolSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   ticker?: boolean
   name?: boolean
   exchange?: boolean
+  instrumentType?: boolean
+  instrumentProvider?: boolean
 }, ExtArgs["result"]["symbol"]>
 
 export type SymbolSelectScalar = {
   ticker?: boolean
   name?: boolean
   exchange?: boolean
+  instrumentType?: boolean
+  instrumentProvider?: boolean
 }
 
-export type SymbolOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"ticker" | "name" | "exchange", ExtArgs["result"]["symbol"]>
+export type SymbolOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"ticker" | "name" | "exchange" | "instrumentType" | "instrumentProvider", ExtArgs["result"]["symbol"]>
 
 export type $SymbolPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Symbol"
@@ -296,6 +348,8 @@ export type $SymbolPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     ticker: string
     name: string | null
     exchange: string | null
+    instrumentType: string
+    instrumentProvider: string
   }, ExtArgs["result"]["symbol"]>
   composites: {}
 }
@@ -722,6 +776,8 @@ export interface SymbolFieldRefs {
   readonly ticker: Prisma.FieldRef<"Symbol", 'String'>
   readonly name: Prisma.FieldRef<"Symbol", 'String'>
   readonly exchange: Prisma.FieldRef<"Symbol", 'String'>
+  readonly instrumentType: Prisma.FieldRef<"Symbol", 'String'>
+  readonly instrumentProvider: Prisma.FieldRef<"Symbol", 'String'>
 }
     
 

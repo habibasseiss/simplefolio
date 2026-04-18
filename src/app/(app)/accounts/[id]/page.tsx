@@ -12,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { isTesouroBond } from "@/domain/tesouro/tesouro.utils"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { formatCurrency, formatDate } from '@/lib/format'
 import { computeAccountChart } from "@/lib/portfolio"
@@ -64,15 +63,21 @@ export default async function AccountDetailPage({
 
   // Fetch price history for each symbol in this account
   const symbols = [...new Set(allTransactions.filter((tx) => tx.type === "BUY" || tx.type === "SELL").map((tx) => tx.symbol))]
-  const priceHistories = await Promise.all(symbols.map((s) => findPriceHistory(s)))
+  // Build symbol→instrumentProvider map from transactions
+  const symbolProviderMap = new Map(
+    allTransactions.map((tx) => [tx.symbol, tx.instrumentProvider])
+  )
+  const priceHistories = await Promise.all(
+    symbols.map((s) => findPriceHistory(s, symbolProviderMap.get(s) ?? "YAHOO"))
+  )
   const priceHistoryMap = new Map(symbols.map((s, i) => [s, priceHistories[i]]))
 
   // Filter transactions used for the chart by category
   const chartTransactions = activeCategory && activeCategory.length > 0
     ? allTransactions.filter((tx) => {
-      const isbond = isTesouroBond(tx.symbol)
-      if (isbond && !activeCategory.includes("bonds")) return false
-      if (!isbond && !activeCategory.includes("stocks")) return false
+      const isBond = tx.instrumentType === "BOND"
+      if (isBond && !activeCategory.includes("bonds")) return false
+      if (!isBond && !activeCategory.includes("stocks")) return false
       return true
     })
     : allTransactions
@@ -81,9 +86,9 @@ export default async function AccountDetailPage({
   const transactions = allTransactions.filter((tx) => {
     if (activeTypes && activeTypes.length > 0 && !activeTypes.includes(tx.type as TxType)) return false
     if (activeCategory && activeCategory.length > 0) {
-      const isbond = isTesouroBond(tx.symbol)
-      if (isbond && !activeCategory.includes("bonds")) return false
-      if (!isbond && !activeCategory.includes("stocks")) return false
+      const isBond = tx.instrumentType === "BOND"
+      if (isBond && !activeCategory.includes("bonds")) return false
+      if (!isBond && !activeCategory.includes("stocks")) return false
     }
     return true
   })
@@ -196,7 +201,7 @@ export default async function AccountDetailPage({
                       <Button variant="ghost" size="icon" asChild>
                         <Link
                           href={
-                            isTesouroBond(tx.symbol)
+                            tx.instrumentType === "BOND"
                               ? `/tesouro/${tx.id}`
                               : `/transactions/${tx.id}`
                           }

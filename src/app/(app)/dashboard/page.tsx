@@ -3,8 +3,8 @@ import { CurrencyToggle } from "@/components/currency-toggle"
 import { DividendIncomeChart } from "@/components/dividend-income-chart"
 import { SetActions, SetHeader } from "@/components/header-context"
 import { Page } from "@/components/page"
+import { PortfolioPerformanceChart } from "@/components/portfolio-performance-chart"
 import { PortfolioStatsCard } from "@/components/portfolio-stats-card"
-import { PortfolioValueChart } from "@/components/portfolio-value-chart"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
 import {
   Card,
@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/table"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { DISPLAY_CURRENCIES, resolveDisplayCurrency } from "@/lib/display-currencies"
+import { buildXirrCashFlows } from "@/lib/finance/cashflows"
+import { xirr } from "@/lib/finance/xirr"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
 import { getExchangeRate, getRatesTo } from "@/lib/fx"
 import { computeOverallChart } from "@/lib/portfolio"
@@ -42,8 +44,6 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Suspense } from "react"
-import { buildXirrCashFlows } from "@/lib/finance/cashflows"
-import { xirr } from "@/lib/finance/xirr"
 
 // Currencies available for display — see src/lib/display-currencies.ts
 
@@ -65,12 +65,12 @@ export default async function DashboardPage({
 
   // Fetch price history and symbol names in parallel
   const [priceHistories, symbolRows] = await Promise.all([
-    Promise.all(symbols.map((s) => findPriceHistory(s))),
-    findSymbolsByTickers(symbols),
+    Promise.all(symbols.map((s) => findPriceHistory(s.symbol, s.instrumentProvider))),
+    findSymbolsByTickers(symbols.map((s) => s.symbol)),
   ])
 
   const priceHistoryMap = new Map(
-    symbols.map((s, i) => [s, priceHistories[i]]),
+    symbols.map((s, i) => [s.symbol, priceHistories[i]]),
   )
   const nameMap = new Map(symbolRows.map((s) => [s.ticker, s.name]))
 
@@ -79,7 +79,7 @@ export default async function DashboardPage({
   //   - price history currencies (for position values)
   //   - account currencies (for cost basis)
   const priceCurrencies = symbols.map(
-    (s) => priceHistoryMap.get(s)?.at(-1)?.currency ?? "USD",
+    (s) => priceHistoryMap.get(s.symbol)?.at(-1)?.currency ?? "USD",
   )
   const accountCurrencies = allTransactions.map((tx) => tx.account.currency)
   // Core FX rates: everything → USD (the internal accounting currency)
@@ -94,11 +94,11 @@ export default async function DashboardPage({
 
   // ── Per-symbol positions (all monetary values in USD) ─────────────────
   const positions = symbols
-    .map((symbol, idx) => {
+    .map((s, idx) => {
       const txs = allTransactions
         .filter(
           (tx) =>
-            tx.symbol === symbol &&
+            tx.symbol === s.symbol &&
             (tx.type === "BUY" || tx.type === "SELL"),
         )
         .sort(
@@ -123,7 +123,7 @@ export default async function DashboardPage({
         }
       }
 
-      const history = priceHistoryMap.get(symbol) ?? []
+      const history = priceHistoryMap.get(s.symbol) ?? []
       const lastRow = history.at(-1)
       const priceCurrency = lastRow?.currency ?? "USD"
       const latestClose = lastRow?.close ?? null
@@ -134,8 +134,9 @@ export default async function DashboardPage({
         totalCostUsd > 0 && pnl !== null ? (pnl / totalCostUsd) * 100 : null
 
       return {
-        symbol,
-        name: nameMap.get(symbol) ?? null,
+        symbol: s.symbol,
+        instrumentType: s.instrumentType,
+        name: nameMap.get(s.symbol) ?? null,
         shares,
         avgCostUsd: shares > 0 ? totalCostUsd / shares : 0,
         latestClose,
@@ -189,6 +190,7 @@ export default async function DashboardPage({
     .sort((a, b) => (b.valueUsd ?? 0) - (a.valueUsd ?? 0))
     .map((p) => ({
       symbol: p.symbol,
+      instrumentType: p.instrumentType,
       name: p.name,
       value: d(p.valueUsd ?? 0),
       pct: totalValueUsd > 0 ? ((p.valueUsd ?? 0) / totalValueUsd) * 100 : 0,
@@ -221,7 +223,7 @@ export default async function DashboardPage({
     }, Infinity)
     : null
   const grossPerformance = d(totalPnlUsd + totalDividendsUsd)
-  
+
   // Calculate XIRR for Annualized Return
   const xirrCashFlows = buildXirrCashFlows(allTransactions, rate, totalValueUsd)
   const annualizedReturn = xirr(xirrCashFlows)
@@ -337,12 +339,11 @@ export default async function DashboardPage({
             </Card>
           </div>
 
-          {/* ── Portfolio Value Chart ─────────────────────────────── */}
+          {/* ── Portfolio Performance Chart ───────────────────────── */}
           {chartData.length > 0 && (
-            <PortfolioValueChart
+            <PortfolioPerformanceChart
               data={chartData}
-              description="Weekly portfolio value vs cost basis"
-              currency={displayCurrency}
+              description="Weekly portfolio return vs cost basis"
             />
           )}
 
@@ -400,9 +401,9 @@ export default async function DashboardPage({
                           className="hover:underline"
                         >
                           <span className="font-semibold">
-                            {p.symbol.startsWith("TD:") ? p.name : p.symbol}
+                            {p.instrumentType === "BOND" ? p.name : p.symbol}
                           </span>
-                          {!p.symbol.startsWith("TD:") && p.name && (
+                          {p.instrumentType === "EQUITY" && p.name && (
                             <span className="block text-xs text-muted-foreground">
                               {p.name}
                             </span>

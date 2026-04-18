@@ -1,7 +1,7 @@
 "use server";
 
-import { syncTesouroPriceHistoryAction } from "@/actions/tesouro.actions";
 import { getFinanceProvider } from "@/lib/finance";
+import { getAllProviders } from "@/lib/providers";
 import {
   findLatestPriceDate,
   upsertPriceHistory,
@@ -16,7 +16,7 @@ export interface SyncPriceHistoryResult {
 }
 
 /**
- * Syncs price history for a single symbol.
+ * Syncs price history for a single EQUITY symbol via Yahoo Finance.
  * Only fetches weeks that are not yet stored (incremental).
  *
  * @param symbol - Ticker symbol to sync.
@@ -27,10 +27,8 @@ export async function syncSymbolPriceHistoryAction(
   symbol: string,
   firstTransactionDate: Date,
 ): Promise<{ count: number; error?: string }> {
-  const latestStored = await findLatestPriceDate(symbol);
+  const latestStored = await findLatestPriceDate(symbol, "YAHOO");
 
-  // Start from the week before the latest stored date (to catch the current
-  // incomplete week being overwritten), or from the first transaction date.
   let fromDate: Date;
   if (latestStored) {
     fromDate = new Date(latestStored);
@@ -50,29 +48,32 @@ export async function syncSymbolPriceHistoryAction(
     return { count: 0 };
   }
 
-  const count = await upsertPriceHistory(symbol, candles);
+  const count = await upsertPriceHistory(symbol, "YAHOO", candles);
   return { count };
 }
 
 /**
- * Syncs price history for every stock/ETF symbol (Yahoo Finance).
- * TD: bonds are excluded — use syncTesouroPriceHistoryAction for those.
+ * Syncs price history for every EQUITY symbol (Yahoo Finance).
  */
-async function syncStocksPriceHistoryAction(): Promise<SyncPriceHistoryResult> {
+async function syncEquityPriceHistoryAction(): Promise<SyncPriceHistoryResult> {
   const userId = await getDefaultUserId();
   const allSymbols = await findAllSymbols(userId);
-  // TD: bonds are handled by syncTesouroPriceHistoryAction — skip them here
-  const symbols = allSymbols.filter((s) => !s.startsWith("TD:"));
+  const equitySymbols = allSymbols.filter(
+    (s) => s.instrumentProvider === "YAHOO",
+  );
 
-  if (symbols.length === 0) {
+  if (equitySymbols.length === 0) {
     return { synced: 0, errors: [] };
   }
 
-  // Fetch earliest transaction dates per symbol to use as fallback start date
   const { prisma } = await import("@/lib/prisma");
   const earliestBySymbol = await prisma.transaction.groupBy({
     by: ["symbol"],
-    where: { account: { userId }, type: { in: ["BUY", "SELL"] } },
+    where: {
+      account: { userId },
+      type: { in: ["BUY", "SELL"] },
+      instrumentProvider: "YAHOO",
+    },
     _min: { date: true },
   });
   const startDateMap = new Map<string, Date>(
@@ -82,8 +83,7 @@ async function syncStocksPriceHistoryAction(): Promise<SyncPriceHistoryResult> {
   let synced = 0;
   const errors: string[] = [];
 
-  // Fetch sequentially to avoid hammering Yahoo
-  for (const symbol of symbols) {
+  for (const { symbol } of equitySymbols) {
     const fromDate = startDateMap.get(symbol) ?? new Date("2000-01-01");
     const result = await syncSymbolPriceHistoryAction(symbol, fromDate);
     if (result.error) {
@@ -97,26 +97,93 @@ async function syncStocksPriceHistoryAction(): Promise<SyncPriceHistoryResult> {
 }
 
 /**
- * Syncs price history for every symbol in the user's portfolio,
- * including both stocks/ETFs (via Yahoo Finance) and Tesouro Direto bonds.
+ * Syncs price history for all registered bond providers.
+ * Each registered DataProvider handles its own symbol set.
  */
-export async function syncAllPriceHistoryAction(): Promise<
-  SyncPriceHistoryResult
-> {
-  const [stocks, tesouro] = await Promise.allSettled([
-    syncStocksPriceHistoryAction(),
-    syncTesouroPriceHistoryAction(),
+async function syncBondPriceHistoryAction(): Promise<SyncPriceHistoryResult> {
+  const userId = await getDefaultUserId();
+  const allSymbols = await findAllSymbols(userId);
+
+  const bondProviders = getAllProviders().filter(
+    (p) => p.instrumentType === "BOND",
+  );
+  if (bondProviders.length === 0) return { synced: 0, errors: [] };
+
+  let synced = 0;
+  const errors: string[] = [];
+
+  for (const provider of bondProviders) {
+    const providerSymbols = allSymbols.filter(
+      (s) => s.instrumentProvider === provider.id,
+    );
+
+    const { prisma } = await import("@/lib/prisma");
+    const earliestDateRows = await prisma.transaction.groupBy({
+      by: ["symbol"],
+      where: {
+        account: { userId },
+        symbol: { in: providerSymbols.map((s) => s.symbol) },
+        type: "BUY",
+      },
+      _min: { date: true },
+    });
+    const earliestBuyMap = new Map(
+      earliestDateRows.map((r) => [
+        r.symbol,
+        r._min.date?.toISOString().split("T")[0] ?? undefined,
+      ]),
+    );
+
+    for (const { symbol } of providerSymbols) {
+      const latestDate = await findLatestPriceDate(symbol, provider.id);
+      const fromDate =
+        latestDate?.toISOString().split("T")[0] ?? earliestBuyMap.get(symbol);
+
+      let candles;
+      try {
+        candles = await provider.syncPriceHistory(symbol, fromDate);
+      } catch (err) {
+        console.error(`[sync:${provider.id}] Failed to fetch ${symbol}:`, err);
+        errors.push(symbol);
+        continue;
+      }
+
+      if (candles.length === 0) continue;
+
+      try {
+        const count = await upsertPriceHistory(symbol, provider.id, candles);
+        synced += count;
+      } catch (err) {
+        console.error(`[sync:${provider.id}] Failed to upsert ${symbol}:`, err);
+        errors.push(symbol);
+      }
+    }
+  }
+
+  return { synced, errors };
+}
+
+/**
+ * Syncs price history for every symbol in the user's portfolio,
+ * including both equities (via Yahoo Finance) and all registered bond providers.
+ */
+export async function syncAllPriceHistoryAction(): Promise<SyncPriceHistoryResult> {
+  const [equities, bonds] = await Promise.allSettled([
+    syncEquityPriceHistoryAction(),
+    syncBondPriceHistoryAction(),
   ]);
 
-  const stocksResult = stocks.status === "fulfilled"
-    ? stocks.value
-    : { synced: 0, errors: [] as string[] };
-  const tesouroResult = tesouro.status === "fulfilled"
-    ? tesouro.value
-    : { synced: 0, errors: [] as string[] };
+  const equitiesResult =
+    equities.status === "fulfilled"
+      ? equities.value
+      : { synced: 0, errors: [] as string[] };
+  const bondsResult =
+    bonds.status === "fulfilled"
+      ? bonds.value
+      : { synced: 0, errors: [] as string[] };
 
   return {
-    synced: stocksResult.synced + tesouroResult.synced,
-    errors: [...stocksResult.errors, ...tesouroResult.errors],
+    synced: equitiesResult.synced + bondsResult.synced,
+    errors: [...equitiesResult.errors, ...bondsResult.errors],
   };
 }

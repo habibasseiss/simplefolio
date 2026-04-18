@@ -224,13 +224,13 @@ export async function importAllDividendsAction(
 ): Promise<ImportAllDividendsResult> {
   const userId = await getDefaultUserId();
   const allSymbols = await findAllSymbols(userId);
-  const symbols = allSymbols.filter((s) => !s.startsWith("TD:"));
+  const symbols = allSymbols.filter((s) => s.instrumentType === "EQUITY");
 
   let inserted = 0;
   let skipped = 0;
   const errors: { symbol: string; error: string }[] = [];
 
-  for (const symbol of symbols) {
+  for (const { symbol } of symbols) {
     const result = await importDividendsAction(symbol, overwrite);
     if (result.error) {
       errors.push({ symbol, error: result.error });

@@ -7,9 +7,7 @@ import { PortfolioValueChart } from "@/components/portfolio-value-chart"
 import { SymbolDateFilter } from "@/components/symbol-date-filter"
 import { SyncTesouroButton } from "@/components/sync-tesouro-button"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { isTesouroBond } from "@/domain/tesouro/tesouro.utils"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { DISPLAY_CURRENCIES, resolveDisplayCurrency } from "@/lib/display-currencies"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
@@ -43,11 +41,16 @@ export default async function AllHoldingsPage({
   ])
 
   // Fetch price history for every symbol in the portfolio
-  const priceHistories = await Promise.all(symbols.map((s) => findPriceHistory(s)))
-  const priceHistoryMap = new Map(symbols.map((s, i) => [s, priceHistories[i]]))
+  const priceHistories = await Promise.all(
+    symbols.map((s) => findPriceHistory(s.symbol, s.instrumentProvider))
+  )
+  const priceHistoryMap = new Map(symbols.map((s, i) => [s.symbol, priceHistories[i]]))
+
+  // Build instrumentType map from the symbol list
+  const symbolInstrumentTypeMap = new Map(symbols.map((s) => [s.symbol, s.instrumentType]))
 
   // FX rates cached 24 h — convert all price + account currencies to USD
-  const priceCurrencies = symbols.map((s) => priceHistoryMap.get(s)?.at(-1)?.currency ?? "USD")
+  const priceCurrencies = symbols.map((s) => priceHistoryMap.get(s.symbol)?.at(-1)?.currency ?? "USD")
   const accountCurrencies = allTransactions.map((tx) => tx.account.currency)
   const fxRates = await getRatesTo([...priceCurrencies, ...accountCurrencies], "USD")
 
@@ -59,9 +62,9 @@ export default async function AllHoldingsPage({
 
   const isCategoryMatch = (symbol: string) => {
     if (!activeCategory || activeCategory.length === 0) return true
-    const isbond = isTesouroBond(symbol)
-    if (isbond && !activeCategory.includes("bonds")) return false
-    if (!isbond && !activeCategory.includes("stocks")) return false
+    const isBond = symbolInstrumentTypeMap.get(symbol) === "BOND"
+    if (isBond && !activeCategory.includes("bonds")) return false
+    if (!isBond && !activeCategory.includes("stocks")) return false
     return true
   }
 
@@ -79,25 +82,6 @@ export default async function AllHoldingsPage({
     if (toDate && d > toDate) return false
     return true
   })
-
-  const dividendTransactions = transactions.filter((tx) => tx.type === "DIVIDEND")
-  const totalDividendNet = dividendTransactions.reduce(
-    (acc, tx) =>
-      acc + calcTransactionTotal(tx) * (fxRates.get(tx.account.currency) ?? 1) * displayRate,
-    0,
-  )
-  const totalDividendGross = dividendTransactions.reduce(
-    (acc, tx) =>
-      acc + tx.quantity * tx.unitPrice * (fxRates.get(tx.account.currency) ?? 1) * displayRate,
-    0,
-  )
-  const totalDividendTaxPaid = dividendTransactions.reduce(
-    (acc, tx) =>
-      acc +
-      tx.quantity * tx.unitPrice * (tx.nraTax ?? 0) * (fxRates.get(tx.account.currency) ?? 1) * displayRate,
-    0,
-  )
-  const hasDividendTax = totalDividendTaxPaid > 0
 
   // Filter price history rows to the selected period before charting.
   // Transactions stay unfiltered so share counts at each week are correct.
@@ -139,35 +123,6 @@ export default async function AllHoldingsPage({
         <ImportAllDividendsButton />
       </SetActions>
 
-      {dividendTransactions.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Dividends Received</CardDescription>
-              <CardTitle className="text-2xl text-blue-600 dark:text-blue-400">
-                {formatCurrency(totalDividendNet, displayCurrency)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-1">
-              {hasDividendTax ? (
-                <>
-                  <p className="text-sm text-muted-foreground">
-                    Gross {formatCurrency(totalDividendGross, displayCurrency)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Tax withheld {formatCurrency(totalDividendTaxPaid, displayCurrency)}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {dividendTransactions.length} payment
-                  {dividendTransactions.length !== 1 ? "s" : ""}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {overallChartData.length > 0 && (
         <PortfolioValueChart

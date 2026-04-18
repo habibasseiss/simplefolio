@@ -26,40 +26,33 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
-import { getCurrencyLocale } from "@/lib/format"
 import type { ChartPoint } from "@/lib/portfolio"
 import * as React from "react"
 
 const chartConfig = {
-  value: {
-    label: "Market Value",
-    color: "var(--chart-1)",
-  },
-  cost: {
-    label: "Cost Basis",
-    color: "var(--chart-2)",
+  performance: {
+    label: "Return",
+    color: "transparent",
   },
 } satisfies ChartConfig
 
-interface PortfolioValueChartProps {
+const GREEN = "#16a34a"
+const RED = "var(--destructive)"
+
+interface PortfolioPerformanceChartProps {
   data: ChartPoint[]
-  title?: string
   description?: string
-  currency?: string
 }
 
-export function PortfolioValueChart({
+export function PortfolioPerformanceChart({
   data,
-  title,
-  description = "Weekly market value vs cost basis",
-  currency = "USD",
-}: PortfolioValueChartProps) {
+  description = "Weekly portfolio return vs cost basis",
+}: PortfolioPerformanceChartProps) {
   const [timeRange, setTimeRange] = React.useState("Total")
 
   const filteredData = React.useMemo(() => {
     if (timeRange === "Total" || data.length === 0) return data
 
-    // Using the last data point as our 'current' date for relative lookbacks
     const latestDateStr = data[data.length - 1].date
     const latestDate = new Date(latestDateStr + "T00:00:00Z")
     let cutoffDate = new Date(latestDate)
@@ -81,40 +74,48 @@ export function PortfolioValueChart({
     return null
   }
 
-  const fmt = new Intl.NumberFormat(getCurrencyLocale(currency), { style: "currency", currency, maximumFractionDigits: 0 })
-
-  const formatted = filteredData.map((d) => ({
-    ...d,
-    value: Math.max(0, d.value),
-    cost: Math.max(0, d.cost),
+  const rawFormatted = filteredData.map((d) => ({
+    date: d.date,
+    performance: d.cost > 0 ? ((d.value - d.cost) / d.cost) * 100 : 0,
   }))
 
-  // PnL based on the original data so it doesn't artificially drop when zooming in
-  const latestOriginal = data[data.length - 1]
-  const pnl = latestOriginal ? latestOriginal.value - latestOriginal.cost : 0
-  const pnlPct = latestOriginal && latestOriginal.cost > 0 ? (pnl / latestOriginal.cost) * 100 : 0
+  // Re-baseline so the first visible point is always 0%
+  const basePerf = rawFormatted[0]?.performance ?? 0
+  const formatted = rawFormatted.map((d) => ({
+    ...d,
+    performance: d.performance - basePerf,
+  }))
+
+  const latestPct = formatted[formatted.length - 1]?.performance ?? 0
+
+  const isPositive = latestPct >= 0
+
+  // Calculate where 0% sits in the chart (0 = top, 1 = bottom) for the gradient
+  const perfValues = formatted.map((d) => d.performance)
+  const minPerf = Math.min(...perfValues)
+  const maxPerf = Math.max(...perfValues)
+  const range = maxPerf - minPerf
+  const zeroOffset =
+    range > 0 && minPerf < 0 && maxPerf > 0
+      ? maxPerf / range
+      : maxPerf <= 0
+        ? 0
+        : 1
+  const zeroPct = `${(zeroOffset * 100).toFixed(2)}%`
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between pb-2">
         <div className="flex flex-col gap-1">
           <CardDescription>{description}</CardDescription>
-          <CardTitle className="flex items-baseline gap-2 text-2xl tabular-nums">
-            {title && <span className="text-lg font-semibold">{title}</span>}
-            {fmt.format(latestOriginal?.value ?? 0)}
-            {latestOriginal && (
-              <span
-                className={
-                  pnl >= 0
-                    ? "text-sm font-normal text-green-600 dark:text-green-400"
-                    : "text-sm font-normal text-red-600 dark:text-red-400"
-                }
-              >
-                {pnl >= 0 ? "+" : ""}
-                {fmt.format(pnl)} ({pnlPct >= 0 ? "+" : ""}
-                {pnlPct.toFixed(2)}%)
-              </span>
-            )}
+          <CardTitle
+            className={`text-2xl tabular-nums ${isPositive
+              ? "text-green-600 dark:text-green-400"
+              : "text-red-600 dark:text-red-400"
+              }`}
+          >
+            {isPositive ? "+" : ""}
+            {latestPct.toFixed(2)}%
           </CardTitle>
         </div>
         <ToggleGroup
@@ -141,13 +142,17 @@ export function PortfolioValueChart({
         >
           <AreaChart data={formatted}>
             <defs>
-              <linearGradient id="fillValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0.0} />
+              {/* Stroke gradient: green above 0%, red below */}
+              <linearGradient id="strokePerformance" x1="0" y1="0" x2="0" y2="1">
+                <stop offset={zeroPct} stopColor={GREEN} />
+                <stop offset={zeroPct} stopColor={RED} />
               </linearGradient>
-              <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0.0} />
+              {/* Fill gradient: green-tinted above 0%, red-tinted below */}
+              <linearGradient id="fillPerformance" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={GREEN} stopOpacity={0.25} />
+                <stop offset={zeroPct} stopColor={GREEN} stopOpacity={0.05} />
+                <stop offset={zeroPct} stopColor={RED} stopOpacity={0.05} />
+                <stop offset="100%" stopColor={RED} stopOpacity={0.25} />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} />
@@ -170,8 +175,8 @@ export function PortfolioValueChart({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              width={70}
-              tickFormatter={(v: number) => fmt.format(v)}
+              width={55}
+              tickFormatter={(v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`}
             />
             <ChartTooltip
               cursor={false}
@@ -186,28 +191,20 @@ export function PortfolioValueChart({
                       timeZone: "UTC",
                     })
                   }}
-                  formatter={(value: unknown) =>
-                    fmt.format(typeof value === "number" ? value : 0)
-                  }
+                  formatter={(value: unknown) => {
+                    const v = typeof value === "number" ? value : 0
+                    return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`
+                  }}
                   indicator="dot"
                 />
               }
             />
             <ReferenceLine y={0} stroke="var(--border)" />
             <Area
-              dataKey="cost"
+              dataKey="performance"
               type="monotone"
-              fill="url(#fillCost)"
-              stroke="var(--chart-2)"
-              strokeWidth={1.5}
-              strokeDasharray="4 4"
-              dot={false}
-            />
-            <Area
-              dataKey="value"
-              type="monotone"
-              fill="url(#fillValue)"
-              stroke="var(--chart-1)"
+              fill="url(#fillPerformance)"
+              stroke="url(#strokePerformance)"
               strokeWidth={2}
               dot={false}
             />

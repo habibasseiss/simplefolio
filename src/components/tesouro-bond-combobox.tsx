@@ -118,11 +118,11 @@ export function TesouroBondCombobox({
 
   return (
     <div ref={containerRef} className="relative">
-      {/* Hidden field carries the human-readable bond title to the form action */}
-      <input type="hidden" name="bondTitle" value={selectedBond?.title ?? defaultValue} />
+      {/* Hidden field carries the human-readable bond name to the form action */}
+      <input type="hidden" name="bondName" value={selectedBond?.title ?? defaultValue} />
 
       <Input
-        id="bondTitle-display"
+        id="bondName-display"
         value={query}
         onChange={(e) => {
           isDirtyRef.current = true;

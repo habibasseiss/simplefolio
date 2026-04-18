@@ -28,41 +28,46 @@ model Account {
 }
 
 model Transaction {
-  id                String   @id @default(cuid())
-  type              String // "BUY" | "SELL" | "DIVIDEND"
-  symbol            String
-  date              DateTime
-  quantity          Float
-  unitPrice         Float
-  fee               Float    @default(0)
-  purchaseRate      Float? // Contracted yield rate at purchase time (Tesouro Direto only, e.g. 6.12 for IPCA+6.12%)
-  nraTax            Float? // Non-Resident Alien withholding tax rate (e.g. 0.3 = 30%)
-  notes             String?
-  reinvestDividends Boolean  @default(false) // DRIP: auto-reinvest dividends from this position
-  isDrip            Boolean  @default(false) // true when this BUY was auto-created by DRIP
-  accountId         String
-  account           Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  type               String // "BUY" | "SELL" | "DIVIDEND"
+  symbol             String
+  instrumentType     String   @default("EQUITY") // "EQUITY" | "BOND"
+  instrumentProvider String   @default("YAHOO") // "YAHOO" | "TESOURO"
+  date               DateTime
+  quantity           Float
+  unitPrice          Float
+  fee                Float    @default(0)
+  purchaseRate       Float? // Contracted yield rate at purchase time (bonds only, e.g. 6.12 for IPCA+6.12%)
+  nraTax             Float? // Non-Resident Alien withholding tax rate (e.g. 0.3 = 30%)
+  notes              String?
+  reinvestDividends  Boolean  @default(false) // DRIP: auto-reinvest dividends from this position
+  isDrip             Boolean  @default(false) // true when this BUY was auto-created by DRIP
+  accountId          String
+  account            Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
-// Weekly adjusted-close prices fetched from Yahoo Finance.
-// One row per (symbol, week). Synced incrementally — only missing weeks are fetched.
+// Weekly adjusted-close prices fetched from a data provider.
+// One row per (symbol, instrumentProvider, week). Synced incrementally — only missing weeks are fetched.
 model PriceHistory {
-  id       String   @id @default(cuid())
-  symbol   String
-  date     DateTime // Monday midnight UTC (week start)
-  close    Float // Split-adjusted close (adjclose from Yahoo)
-  currency String
+  id                 String   @id @default(cuid())
+  symbol             String
+  instrumentProvider String   @default("YAHOO")
+  date               DateTime // Monday midnight UTC (week start)
+  close              Float // Split-adjusted close price
+  currency           String
 
-  @@unique([symbol, date])
-  @@index([symbol])
+  @@unique([symbol, instrumentProvider, date])
+  @@index([symbol, instrumentProvider])
 }
 
-// Cached instrument metadata from Yahoo Finance.
-// Populated whenever a user selects a symbol via the search combobox.
+// Cached instrument metadata.
+// Populated whenever a user selects a symbol via the search combobox or adds a bond transaction.
 model Symbol {
-  ticker   String  @id
-  name     String?
-  exchange String?
+  ticker             String  @id
+  name               String?
+  exchange           String?
+  instrumentType     String  @default("EQUITY") // "EQUITY" | "BOND"
+  instrumentProvider String  @default("YAHOO") // "YAHOO" | "TESOURO"
 }

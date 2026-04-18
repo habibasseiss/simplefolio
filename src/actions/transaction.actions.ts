@@ -55,7 +55,7 @@ export async function createTransactionAction(
   const { name, exchange } = await getFinanceProvider().getSymbolInfo(
     parsed.data.symbol,
   );
-  await upsertSymbol(parsed.data.symbol, name, exchange);
+  await upsertSymbol({ ticker: parsed.data.symbol, name, exchange });
 
   revalidatePath(`/accounts/${targetAccountId}`);
   redirect(`/accounts/${targetAccountId}`);
@@ -98,7 +98,7 @@ export async function updateTransactionAction(
     const { name, exchange } = await getFinanceProvider().getSymbolInfo(
       parsed.data.symbol,
     );
-    await upsertSymbol(parsed.data.symbol, name, exchange);
+    await upsertSymbol({ ticker: parsed.data.symbol, name, exchange });
   }
 
   revalidatePath(`/accounts/${targetAccountId}`);

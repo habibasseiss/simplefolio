@@ -2,7 +2,7 @@ import { findAllTransactionsForUser } from "@/repositories/transaction.repositor
 import { getDefaultUserId } from "@/repositories/user.repository";
 
 const HEADER =
-  "type,symbol,date,quantity,currency,unitprice,fee,nratax,account,reinvestdividends,isdrip";
+  "type,symbol,instrument_type,instrument_provider,purchase_rate,date,quantity,currency,unitprice,fee,nratax,account,reinvestdividends,isdrip";
 
 function escapeField(value: string): string {
   if (value.includes(",") || value.includes('"') || value.includes("\n")) {
@@ -23,6 +23,9 @@ export async function GET() {
     [
       tx.type,
       tx.symbol,
+      tx.instrumentType,
+      tx.instrumentProvider,
+      tx.purchaseRate != null ? tx.purchaseRate.toString() : "",
       formatDate(new Date(tx.date)),
       tx.quantity.toString(),
       tx.account.currency,

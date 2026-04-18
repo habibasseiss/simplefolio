@@ -5,7 +5,7 @@ import { TesouroBondCombobox } from "@/components/tesouro-bond-combobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { bondTickerToName } from "@/domain/tesouro/tesouro.utils";
+import { tickerToBondName } from "@/domain/tesouro/tesouro.schema";
 import { useActionState, useState } from "react";
 
 function toDateInputValue(date: Date | string | undefined) {
@@ -24,7 +24,7 @@ interface BondResult {
 interface TesouroBondTransactionFormProps {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
   defaultValues?: {
-    /** Canonical ticker, e.g. "TD:TESOURO_SELIC_2029" — decoded to name for display */
+    /** Canonical ticker, e.g. "TESOURO_SELIC_2029" — decoded to name for display */
     symbol?: string;
     type?: "BUY" | "SELL";
     date?: Date | string;
@@ -69,7 +69,7 @@ export function TesouroBondTransactionForm({
 
   // Derive the human-readable bond name from the stored ticker
   const defaultBondTitle = defaultValues?.symbol
-    ? bondTickerToName(defaultValues.symbol)
+    ? tickerToBondName(defaultValues.symbol)
     : undefined;
 
   function handleBondSelect(bond: BondResult) {
@@ -122,14 +122,14 @@ export function TesouroBondTransactionForm({
 
       {/* Bond Picker */}
       <div className="flex flex-col gap-2">
-        <Label htmlFor="bondTitle-display">Bond</Label>
+        <Label htmlFor="bondName-display">Bond</Label>
         <TesouroBondCombobox
           defaultValue={defaultBondTitle}
           onBondSelect={handleBondSelect}
         />
-        {state.fieldErrors?.bondTitle && (
+        {state.fieldErrors?.bondName && (
           <p className="text-sm text-destructive">
-            {state.fieldErrors.bondTitle[0]}
+            {state.fieldErrors.bondName[0]}
           </p>
         )}
       </div>

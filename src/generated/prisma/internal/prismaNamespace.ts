@@ -842,6 +842,8 @@ export const TransactionScalarFieldEnum = {
   id: 'id',
   type: 'type',
   symbol: 'symbol',
+  instrumentType: 'instrumentType',
+  instrumentProvider: 'instrumentProvider',
   date: 'date',
   quantity: 'quantity',
   unitPrice: 'unitPrice',
@@ -862,6 +864,7 @@ export type TransactionScalarFieldEnum = (typeof TransactionScalarFieldEnum)[key
 export const PriceHistoryScalarFieldEnum = {
   id: 'id',
   symbol: 'symbol',
+  instrumentProvider: 'instrumentProvider',
   date: 'date',
   close: 'close',
   currency: 'currency'
@@ -873,7 +876,9 @@ export type PriceHistoryScalarFieldEnum = (typeof PriceHistoryScalarFieldEnum)[k
 export const SymbolScalarFieldEnum = {
   ticker: 'ticker',
   name: 'name',
-  exchange: 'exchange'
+  exchange: 'exchange',
+  instrumentType: 'instrumentType',
+  instrumentProvider: 'instrumentProvider'
 } as const
 
 export type SymbolScalarFieldEnum = (typeof SymbolScalarFieldEnum)[keyof typeof SymbolScalarFieldEnum]

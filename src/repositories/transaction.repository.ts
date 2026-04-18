@@ -63,14 +63,26 @@ export async function deleteTransaction(id: string, accountId: string) {
   });
 }
 
-export async function findAllSymbols(userId: string): Promise<string[]> {
+export interface SymbolWithProvider {
+  symbol: string;
+  instrumentType: string;
+  instrumentProvider: string;
+}
+
+export async function findAllSymbols(
+  userId: string,
+): Promise<SymbolWithProvider[]> {
   const rows = await prisma.transaction.findMany({
     where: { account: { userId }, type: { in: ["BUY", "SELL"] } },
-    select: { symbol: true },
+    select: {
+      symbol: true,
+      instrumentType: true,
+      instrumentProvider: true,
+    },
     distinct: ["symbol"],
     orderBy: { symbol: "asc" },
   });
-  return rows.map((r) => r.symbol);
+  return rows;
 }
 
 export async function findAllTransactionsForUser(

@@ -21,7 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { isTesouroBond } from "@/domain/tesouro/tesouro.utils"
 import { calcTransactionTotal } from "@/domain/transaction/transaction.utils"
 import { getFinanceProvider } from "@/lib/finance"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
@@ -52,17 +51,21 @@ export default async function SymbolPage({
   const symbol = decodeURIComponent(ticker).toUpperCase()
   const userId = await getDefaultUserId()
 
-  const isBond = isTesouroBond(symbol)
-
-  const [allTransactions, quote, priceHistory, symbolRecord] = await Promise.all([
+  const [allTransactions, symbolRecord] = await Promise.all([
     findTransactionsBySymbol(userId, symbol),
+    findSymbol(symbol),
+  ])
+
+  const instrumentProvider = symbolRecord?.instrumentProvider ?? "YAHOO"
+  const isBond = symbolRecord?.instrumentType === "BOND"
+
+  const [quote, priceHistory] = await Promise.all([
     isBond
       ? Promise.resolve(null)
       : getFinanceProvider()
         .getGlobalQuote(symbol)
         .catch(() => null),
-    findPriceHistory(symbol),
-    findSymbol(symbol),
+    findPriceHistory(symbol, instrumentProvider),
   ])
 
   const selectedAccountIds = accounts ? accounts.split(",") : null

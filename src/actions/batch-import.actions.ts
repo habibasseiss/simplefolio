@@ -1,10 +1,6 @@
 "use server";
 
 import {
-  bondTickerToName,
-  isTesouroBond,
-} from "@/domain/tesouro/tesouro.utils";
-import {
   type CreateTransactionInput,
   createTransactionSchema,
 } from "@/domain/transaction/transaction.schema";
@@ -36,6 +32,9 @@ export type BatchImportResult = {
 const CSV_HEADER = [
   "type",
   "symbol",
+  "instrument_type",
+  "instrument_provider",
+  "purchase_rate",
   "date",
   "quantity",
   "currency",
@@ -64,7 +63,7 @@ export async function batchImportAction(
   // Validate headers
   const missingHeaders = CSV_HEADER.filter(
     (h) =>
-      h !== "nratax" && h !== "reinvestdividends" && h !== "isdrip" &&
+      h !== "nratax" && h !== "reinvestdividends" && h !== "isdrip" && h !== "instrument_type" && h !== "instrument_provider" && h !== "purchase_rate" &&
       !headers.includes(h),
   );
   if (missingHeaders.length > 0) {
@@ -132,6 +131,9 @@ export async function batchImportAction(
       reinvestDividendsRaw === "yes" ||
       reinvestDividendsRaw === "1";
 
+    const purchaseRateRaw = col(row, "purchase_rate");
+    const purchaseRate = purchaseRateRaw ? parseFloat(purchaseRateRaw) : null;
+
     const isDripRaw = col(row, "isdrip").toLowerCase();
     const isDrip = isDripRaw === "true" || isDripRaw === "yes" ||
       isDripRaw === "1";
@@ -139,10 +141,13 @@ export async function batchImportAction(
     const parsed = createTransactionSchema.safeParse({
       type: col(row, "type"),
       symbol: col(row, "symbol"),
+      instrumentType: col(row, "instrument_type") || undefined,
+      instrumentProvider: col(row, "instrument_provider") || undefined,
       date: col(row, "date"),
       quantity: col(row, "quantity"),
       unitPrice: col(row, "unitprice"),
       fee: col(row, "fee") || "0",
+      purchaseRate: purchaseRate,
       nraTax: nraTax,
       reinvestDividends,
       isDrip,
@@ -185,19 +190,11 @@ export async function batchImportAction(
     const provider = getFinanceProvider();
     await Promise.all(
       [...importedSymbols].map(async (ticker) => {
-        if (isTesouroBond(ticker)) {
-          await upsertSymbol(
-            ticker,
-            bondTickerToName(ticker),
-            "Tesouro Direto",
-          );
+        const { name, exchange } = await provider.getSymbolInfo(ticker);
+        if (name !== null || exchange !== null) {
+          await upsertSymbol({ ticker, name, exchange });
         } else {
-          const { name, exchange } = await provider.getSymbolInfo(ticker);
-          if (name !== null || exchange !== null) {
-            await upsertSymbol(ticker, name, exchange);
-          } else {
-            await ensureSymbol(ticker);
-          }
+          await ensureSymbol(ticker);
         }
       }),
     );

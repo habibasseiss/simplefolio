@@ -37,6 +37,7 @@ export type PriceHistorySumAggregateOutputType = {
 export type PriceHistoryMinAggregateOutputType = {
   id: string | null
   symbol: string | null
+  instrumentProvider: string | null
   date: Date | null
   close: number | null
   currency: string | null
@@ -45,6 +46,7 @@ export type PriceHistoryMinAggregateOutputType = {
 export type PriceHistoryMaxAggregateOutputType = {
   id: string | null
   symbol: string | null
+  instrumentProvider: string | null
   date: Date | null
   close: number | null
   currency: string | null
@@ -53,6 +55,7 @@ export type PriceHistoryMaxAggregateOutputType = {
 export type PriceHistoryCountAggregateOutputType = {
   id: number
   symbol: number
+  instrumentProvider: number
   date: number
   close: number
   currency: number
@@ -71,6 +74,7 @@ export type PriceHistorySumAggregateInputType = {
 export type PriceHistoryMinAggregateInputType = {
   id?: true
   symbol?: true
+  instrumentProvider?: true
   date?: true
   close?: true
   currency?: true
@@ -79,6 +83,7 @@ export type PriceHistoryMinAggregateInputType = {
 export type PriceHistoryMaxAggregateInputType = {
   id?: true
   symbol?: true
+  instrumentProvider?: true
   date?: true
   close?: true
   currency?: true
@@ -87,6 +92,7 @@ export type PriceHistoryMaxAggregateInputType = {
 export type PriceHistoryCountAggregateInputType = {
   id?: true
   symbol?: true
+  instrumentProvider?: true
   date?: true
   close?: true
   currency?: true
@@ -182,6 +188,7 @@ export type PriceHistoryGroupByArgs<ExtArgs extends runtime.Types.Extensions.Int
 export type PriceHistoryGroupByOutputType = {
   id: string
   symbol: string
+  instrumentProvider: string
   date: Date
   close: number
   currency: string
@@ -213,6 +220,7 @@ export type PriceHistoryWhereInput = {
   NOT?: Prisma.PriceHistoryWhereInput | Prisma.PriceHistoryWhereInput[]
   id?: Prisma.StringFilter<"PriceHistory"> | string
   symbol?: Prisma.StringFilter<"PriceHistory"> | string
+  instrumentProvider?: Prisma.StringFilter<"PriceHistory"> | string
   date?: Prisma.DateTimeFilter<"PriceHistory"> | Date | string
   close?: Prisma.FloatFilter<"PriceHistory"> | number
   currency?: Prisma.StringFilter<"PriceHistory"> | string
@@ -221,6 +229,7 @@ export type PriceHistoryWhereInput = {
 export type PriceHistoryOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   close?: Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -228,19 +237,21 @@ export type PriceHistoryOrderByWithRelationInput = {
 
 export type PriceHistoryWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  symbol_date?: Prisma.PriceHistorySymbolDateCompoundUniqueInput
+  symbol_instrumentProvider_date?: Prisma.PriceHistorySymbolInstrumentProviderDateCompoundUniqueInput
   AND?: Prisma.PriceHistoryWhereInput | Prisma.PriceHistoryWhereInput[]
   OR?: Prisma.PriceHistoryWhereInput[]
   NOT?: Prisma.PriceHistoryWhereInput | Prisma.PriceHistoryWhereInput[]
   symbol?: Prisma.StringFilter<"PriceHistory"> | string
+  instrumentProvider?: Prisma.StringFilter<"PriceHistory"> | string
   date?: Prisma.DateTimeFilter<"PriceHistory"> | Date | string
   close?: Prisma.FloatFilter<"PriceHistory"> | number
   currency?: Prisma.StringFilter<"PriceHistory"> | string
-}, "id" | "symbol_date">
+}, "id" | "symbol_instrumentProvider_date">
 
 export type PriceHistoryOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   close?: Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -257,6 +268,7 @@ export type PriceHistoryScalarWhereWithAggregatesInput = {
   NOT?: Prisma.PriceHistoryScalarWhereWithAggregatesInput | Prisma.PriceHistoryScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"PriceHistory"> | string
   symbol?: Prisma.StringWithAggregatesFilter<"PriceHistory"> | string
+  instrumentProvider?: Prisma.StringWithAggregatesFilter<"PriceHistory"> | string
   date?: Prisma.DateTimeWithAggregatesFilter<"PriceHistory"> | Date | string
   close?: Prisma.FloatWithAggregatesFilter<"PriceHistory"> | number
   currency?: Prisma.StringWithAggregatesFilter<"PriceHistory"> | string
@@ -265,6 +277,7 @@ export type PriceHistoryScalarWhereWithAggregatesInput = {
 export type PriceHistoryCreateInput = {
   id?: string
   symbol: string
+  instrumentProvider?: string
   date: Date | string
   close: number
   currency: string
@@ -273,6 +286,7 @@ export type PriceHistoryCreateInput = {
 export type PriceHistoryUncheckedCreateInput = {
   id?: string
   symbol: string
+  instrumentProvider?: string
   date: Date | string
   close: number
   currency: string
@@ -281,6 +295,7 @@ export type PriceHistoryUncheckedCreateInput = {
 export type PriceHistoryUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close?: Prisma.FloatFieldUpdateOperationsInput | number
   currency?: Prisma.StringFieldUpdateOperationsInput | string
@@ -289,6 +304,7 @@ export type PriceHistoryUpdateInput = {
 export type PriceHistoryUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close?: Prisma.FloatFieldUpdateOperationsInput | number
   currency?: Prisma.StringFieldUpdateOperationsInput | string
@@ -297,6 +313,7 @@ export type PriceHistoryUncheckedUpdateInput = {
 export type PriceHistoryCreateManyInput = {
   id?: string
   symbol: string
+  instrumentProvider?: string
   date: Date | string
   close: number
   currency: string
@@ -305,6 +322,7 @@ export type PriceHistoryCreateManyInput = {
 export type PriceHistoryUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close?: Prisma.FloatFieldUpdateOperationsInput | number
   currency?: Prisma.StringFieldUpdateOperationsInput | string
@@ -313,19 +331,22 @@ export type PriceHistoryUpdateManyMutationInput = {
 export type PriceHistoryUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   symbol?: Prisma.StringFieldUpdateOperationsInput | string
+  instrumentProvider?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   close?: Prisma.FloatFieldUpdateOperationsInput | number
   currency?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
-export type PriceHistorySymbolDateCompoundUniqueInput = {
+export type PriceHistorySymbolInstrumentProviderDateCompoundUniqueInput = {
   symbol: string
+  instrumentProvider: string
   date: Date | string
 }
 
 export type PriceHistoryCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   close?: Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -338,6 +359,7 @@ export type PriceHistoryAvgOrderByAggregateInput = {
 export type PriceHistoryMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   close?: Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -346,6 +368,7 @@ export type PriceHistoryMaxOrderByAggregateInput = {
 export type PriceHistoryMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   symbol?: Prisma.SortOrder
+  instrumentProvider?: Prisma.SortOrder
   date?: Prisma.SortOrder
   close?: Prisma.SortOrder
   currency?: Prisma.SortOrder
@@ -360,6 +383,7 @@ export type PriceHistorySumOrderByAggregateInput = {
 export type PriceHistorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   symbol?: boolean
+  instrumentProvider?: boolean
   date?: boolean
   close?: boolean
   currency?: boolean
@@ -368,6 +392,7 @@ export type PriceHistorySelect<ExtArgs extends runtime.Types.Extensions.Internal
 export type PriceHistorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   symbol?: boolean
+  instrumentProvider?: boolean
   date?: boolean
   close?: boolean
   currency?: boolean
@@ -376,6 +401,7 @@ export type PriceHistorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.
 export type PriceHistorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   symbol?: boolean
+  instrumentProvider?: boolean
   date?: boolean
   close?: boolean
   currency?: boolean
@@ -384,12 +410,13 @@ export type PriceHistorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
 export type PriceHistorySelectScalar = {
   id?: boolean
   symbol?: boolean
+  instrumentProvider?: boolean
   date?: boolean
   close?: boolean
   currency?: boolean
 }
 
-export type PriceHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "symbol" | "date" | "close" | "currency", ExtArgs["result"]["priceHistory"]>
+export type PriceHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "symbol" | "instrumentProvider" | "date" | "close" | "currency", ExtArgs["result"]["priceHistory"]>
 
 export type $PriceHistoryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "PriceHistory"
@@ -397,6 +424,7 @@ export type $PriceHistoryPayload<ExtArgs extends runtime.Types.Extensions.Intern
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     symbol: string
+    instrumentProvider: string
     date: Date
     close: number
     currency: string
@@ -825,6 +853,7 @@ export interface Prisma__PriceHistoryClient<T, Null = never, ExtArgs extends run
 export interface PriceHistoryFieldRefs {
   readonly id: Prisma.FieldRef<"PriceHistory", 'String'>
   readonly symbol: Prisma.FieldRef<"PriceHistory", 'String'>
+  readonly instrumentProvider: Prisma.FieldRef<"PriceHistory", 'String'>
   readonly date: Prisma.FieldRef<"PriceHistory", 'DateTime'>
   readonly close: Prisma.FieldRef<"PriceHistory", 'Float'>
   readonly currency: Prisma.FieldRef<"PriceHistory", 'String'>

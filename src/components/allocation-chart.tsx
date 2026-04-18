@@ -13,13 +13,13 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { bondTickerToName } from "@/domain/tesouro/tesouro.utils"
 import { getCurrencyLocale } from "@/lib/format"
 import Link from "next/link"
 import { Cell, Pie, PieChart } from "recharts"
 
 export interface AllocationItem {
   symbol: string
+  instrumentType: string // "EQUITY" | "BOND"
   name: string | null
   value: number
   pct: number
@@ -33,12 +33,20 @@ interface AllocationChartProps {
 // 10-slot color palette cycling through chart CSS variables
 const COLORS = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5].map((n) => `var(--chart-${n})`)
 
-/** Combines TD: bond variants (e.g. TD:TESOURO_IPCA+_2029 + _2035) into one entry per base type. */
-function groupTesouroBonds(data: AllocationItem[]): AllocationItem[] {
+/**
+ * Groups bond entries by base type within the same instrument type.
+ * e.g. "TESOURO_IPCA+_2029" and "TESOURO_IPCA+_2035" merge into "TESOURO_IPCA+".
+ * Equity entries pass through unchanged.
+ */
+function groupBondsByType(data: AllocationItem[]): AllocationItem[] {
   const result = new Map<string, AllocationItem>()
   for (const item of data) {
-    if (item.symbol.startsWith("TD:")) {
+    if (item.instrumentType === "BOND") {
+      // Strip trailing 4-digit year to get a base type key
       const baseSymbol = item.symbol.replace(/_\d{4}$/, "")
+      const baseName = item.name
+        ? item.name.replace(/\s+\d{4}$/, "")
+        : baseSymbol.replace(/_/g, " ")
       const existing = result.get(baseSymbol)
       if (existing) {
         existing.value += item.value
@@ -46,7 +54,8 @@ function groupTesouroBonds(data: AllocationItem[]): AllocationItem[] {
       } else {
         result.set(baseSymbol, {
           symbol: baseSymbol,
-          name: item.name ? item.name.replace(/\s+\d{4}$/, "") : bondTickerToName(baseSymbol),
+          instrumentType: "BOND",
+          name: baseName,
           value: item.value,
           pct: item.pct,
         })
@@ -62,7 +71,7 @@ export function AllocationChart({
   data,
   currency = "USD",
 }: AllocationChartProps) {
-  const grouped = groupTesouroBonds(data)
+  const grouped = groupBondsByType(data)
   const fmt = new Intl.NumberFormat(getCurrencyLocale(currency), {
     style: "currency",
     currency,
@@ -142,15 +151,15 @@ export function AllocationChart({
                 />
                 <Link
                   href={
-                    item.symbol.startsWith("TD:") && !/_\d{4}$/.test(item.symbol)
+                    item.instrumentType === "BOND"
                       ? "/holdings"
                       : `/symbol/${item.symbol}`
                   }
                   className="font-semibold hover:underline"
                 >
-                  {item.symbol.startsWith("TD:") ? item.name : item.symbol}
+                  {item.instrumentType === "BOND" ? item.name : item.symbol}
                 </Link>
-                {!item.symbol.startsWith("TD:") && item.name && (
+                {item.instrumentType === "EQUITY" && item.name && (
                   <span className="truncate text-muted-foreground">
                     {item.name}
                   </span>

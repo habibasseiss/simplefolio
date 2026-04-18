@@ -1,6 +1,6 @@
 import { SetHeader } from "@/components/header-context"
 import { Page } from "@/components/page"
-import { Card } from '@/components/ui/card'
+import { Card } from "@/components/ui/card"
 import { findSymbolsByTickers } from "@/repositories/symbol.repository"
 import { findAllSymbols } from "@/repositories/transaction.repository"
 import { getDefaultUserId } from "@/repositories/user.repository"
@@ -10,11 +10,18 @@ import Link from "next/link"
 export default async function HoldingsPage() {
   const userId = await getDefaultUserId()
   const symbols = await findAllSymbols(userId)
-  const symbolRows = await findSymbolsByTickers(symbols)
+  const symbolRows = await findSymbolsByTickers(symbols.map((s) => s.symbol))
   const symbolNameMap = new Map(symbolRows.map((s) => [s.ticker, s.name]))
 
-  const bonds = symbols.filter((s) => s.startsWith("TD:"))
-  const stocks = symbols.filter((s) => !s.startsWith("TD:"))
+  const bonds = symbols.filter((s) => s.instrumentType === "BOND")
+  const stocks = symbols.filter((s) => s.instrumentType === "EQUITY")
+
+  // Group bonds by provider for section headings
+  const bondsByProvider = bonds.reduce<Record<string, typeof bonds>>((acc, s) => {
+    if (!acc[s.instrumentProvider]) acc[s.instrumentProvider] = []
+    acc[s.instrumentProvider].push(s)
+    return acc
+  }, {})
 
   return (
     <Page>
@@ -47,7 +54,7 @@ export default async function HoldingsPage() {
                   </div>
                 </Card>
               </Link>
-              {stocks.map((symbol) => (
+              {stocks.map(({ symbol }) => (
                 <Link key={symbol} href={`/symbol/${symbol}`}>
                   <Card className="h-full transition-colors hover:bg-muted/50">
                     <div className="flex items-center gap-2 px-4">
@@ -67,14 +74,17 @@ export default async function HoldingsPage() {
             </div>
           </section>
 
-          {bonds.length > 0 && (
-            <section>
+          {Object.entries(bondsByProvider).map(([provider, providerBonds]) => (
+            <section key={provider}>
               <div className="flex items-center gap-2 mb-4">
                 <LandmarkIcon className="size-4 text-muted-foreground" />
-                <h2 className="text-sm font-medium text-muted-foreground">Tesouro Direto</h2>
+                <h2 className="text-sm font-medium text-muted-foreground">
+                  {/* Use name from Symbol table once available, fall back to provider ID */}
+                  {provider === "TESOURO" ? "Tesouro Direto" : provider}
+                </h2>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {bonds.map((symbol) => {
+                {providerBonds.map(({ symbol }) => {
                   const name = symbolNameMap.get(symbol)
                   return (
                     <Link key={symbol} href={`/symbol/${symbol}`}>
@@ -89,7 +99,7 @@ export default async function HoldingsPage() {
                 })}
               </div>
             </section>
-          )}
+          ))}
         </div>
       )}
     </Page>

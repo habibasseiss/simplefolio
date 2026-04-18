@@ -8,8 +8,8 @@ describe('Portfolio Utils', () => {
         { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-01'), quantity: 10, unitPrice: 100, fee: 5 },
       ];
       const priceHistory = [
-        { symbol: 'AAPL', currency: 'USD', date: new Date('2024-01-05'), close: 110, id: '1', createdAt: new Date() },
-        { symbol: 'AAPL', currency: 'USD', date: new Date('2024-01-12'), close: 120, id: '2', createdAt: new Date() },
+        { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-05'), close: 110, id: '1', createdAt: new Date() },
+        { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-12'), close: 120, id: '2', createdAt: new Date() },
       ];
 
       const chart = computeSymbolChart(transactions, priceHistory);

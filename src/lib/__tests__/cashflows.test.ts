@@ -3,6 +3,7 @@ import {
   buildXirrCashFlows,
   type TransactionForCashFlow,
 } from "../finance/cashflows";
+import { xirr } from "../finance/xirr";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -411,3 +412,145 @@ describe("buildXirrCashFlows – empty / edge inputs", () => {
     expect(cfs).toHaveLength(0);
   });
 });
+
+// ─── Multi-currency → XIRR end-to-end invariant ────────────────────────────
+//
+// Key correctness property: a mixed-currency portfolio, after FX conversion
+// inside buildXirrCashFlows, must yield the same XIRR as an equivalent
+// portfolio where all amounts were already in USD.
+//
+// This validates that:
+//  1. Currency conversion happens BEFORE cash flows reach xirr()
+//  2. xirr() always operates on a single consistent base currency
+//  3. Mixing currencies without conversion would silently corrupt the result
+
+describe("buildXirrCashFlows + xirr – multi-currency end-to-end invariant", () => {
+  it("mixed-currency portfolio gives same XIRR as its USD-equivalent", () => {
+    // Portfolio: two accounts — USD and EUR
+    // EUR/USD rate: 1.10 (1 EUR = 1.10 USD)
+    //
+    // USD account: buy $5,000 worth on 2023-01-01
+    // EUR account: buy €4,000 worth on 2023-01-01 → $4,400 USD equivalent
+    // Terminal value: $10,450 USD on 2025-01-01
+    const eurToUsd = 1.10;
+    const fxRate = (ccy: string) => (ccy === "EUR" ? eurToUsd : 1);
+
+    const mixedTransactions: TransactionForCashFlow[] = [
+      tx({ type: "BUY", quantity: 50, unitPrice: 100, fee: 0, date: new Date("2023-01-01"), account: { currency: "USD" } }),
+      tx({ type: "BUY", quantity: 40, unitPrice: 100, fee: 0, date: new Date("2023-01-01"), account: { currency: "EUR" } }),
+    ];
+    const terminalValueUsd = 10450;
+
+    // Build via our pipeline (multi-currency → FX → cash flows)
+    const mixedCfs = buildXirrCashFlows(mixedTransactions, fxRate, terminalValueUsd, asOf);
+    const mixedResult = xirr(mixedCfs);
+
+    // Build the USD-equivalent directly (already converted):
+    // - USD buy: -5000
+    // - EUR buy converted: 40 * 100 * 1.10 = -4400
+    const usdEquivalentCfs = buildXirrCashFlows(
+      [
+        tx({ type: "BUY", quantity: 50, unitPrice: 100, fee: 0, date: new Date("2023-01-01"), account: { currency: "USD" } }),
+        tx({ type: "BUY", quantity: 40, unitPrice: 110, fee: 0, date: new Date("2023-01-01"), account: { currency: "USD" } }),
+      ],
+      usdRate,
+      terminalValueUsd,
+      asOf,
+    );
+    const usdResult = xirr(usdEquivalentCfs);
+
+    expect(mixedResult).not.toBeNull();
+    expect(usdResult).not.toBeNull();
+    // Both pipelines must converge to the same annualized return
+    expect(Math.abs(mixedResult! - usdResult!)).toBeLessThan(0.0001);
+  });
+
+  it("omitting FX conversion (passing wrong amounts) produces a different, wrong XIRR", () => {
+    // Demonstrates WHY the FX conversion matters:
+    // EUR account, 1 EUR = 2 USD. Without conversion the EUR amount looks
+    // half as large as it truly is in USD, producing a lower apparent cost
+    // and therefore an inflated XIRR.
+    const eurToUsd = 2.0;
+    const fxRate = (ccy: string) => (ccy === "EUR" ? eurToUsd : 1);
+
+    const transaction: TransactionForCashFlow[] = [
+      tx({ type: "BUY", quantity: 1, unitPrice: 5000, fee: 0, date: new Date("2023-01-01"), account: { currency: "EUR" } }),
+    ];
+    const terminalValueUsd = 12000; // true USD value
+
+    // Correct pipeline (EUR converted to USD)
+    const correctCfs = buildXirrCashFlows(transaction, fxRate, terminalValueUsd, asOf);
+    const correctResult = xirr(correctCfs);
+    // Cost in USD = 5000 * 2 = $10,000. Got $12,000 → ~10% annualized over 2 years.
+
+    // Wrong pipeline: pretend fxRate is always 1 (forget to convert)
+    const wrongCfs = buildXirrCashFlows(transaction, () => 1, terminalValueUsd, asOf);
+    const wrongResult = xirr(wrongCfs);
+    // Cost appears as $5,000 (wrong). Got $12,000 → inflated ~55% annualized.
+
+    expect(correctResult).not.toBeNull();
+    expect(wrongResult).not.toBeNull();
+    // The correct result should be around 10%, the wrong one much higher
+    expect(correctResult!).toBeCloseTo(0.10, 1);
+    expect(wrongResult!).toBeGreaterThan(0.40); // badly inflated
+    // They must NOT be equal
+    expect(Math.abs(correctResult! - wrongResult!)).toBeGreaterThan(0.20);
+  });
+
+  it("three-currency portfolio (USD, EUR, BRL) produces consistent base-currency XIRR", () => {
+    // USD account: buy $3,000                   → -$3,000 USD
+    // EUR account: buy €2,000 at 1.10 EUR/USD   → -$2,200 USD
+    // BRL account: buy R$10,000 at 0.20 BRL/USD → -$2,000 USD
+    // Total cost in USD: $7,200
+    // Terminal value: $8,640 USD (20% total gain over 2 years → ~9.5% CAGR)
+    const fxRate = (ccy: string) => {
+      if (ccy === "EUR") return 1.10;
+      if (ccy === "BRL") return 0.20;
+      return 1;
+    };
+
+    const transactions: TransactionForCashFlow[] = [
+      tx({ type: "BUY", quantity: 30, unitPrice: 100, fee: 0, date: new Date("2023-01-01"), account: { currency: "USD" } }),
+      tx({ type: "BUY", quantity: 20, unitPrice: 100, fee: 0, date: new Date("2023-01-01"), account: { currency: "EUR" } }),
+      tx({ type: "BUY", quantity: 100, unitPrice: 100, fee: 0, date: new Date("2023-01-01"), account: { currency: "BRL" } }),
+    ];
+    const terminalValueUsd = 8640;
+
+    const cfs = buildXirrCashFlows(transactions, fxRate, terminalValueUsd, asOf);
+    const result = xirr(cfs);
+
+    expect(result).not.toBeNull();
+    // (8640/7200)^(1/2) - 1 ≈ 9.54%
+    expect(result!).toBeCloseTo(0.0954, 2);
+  });
+
+  it("sell proceeds in foreign currency are correctly converted before reaching XIRR", () => {
+    // Buy $10,000 USD. Sell from EUR account for €5,000 at 1.10 → $5,500 USD.
+    // Terminal value $5,000 USD.
+    // Total cash in: $5,500 + $5,000 = $10,500 → small profit over 2 years.
+    const fxRate = (ccy: string) => (ccy === "EUR" ? 1.10 : 1);
+
+    const transactions: TransactionForCashFlow[] = [
+      tx({ type: "BUY",  quantity: 100, unitPrice: 100, fee: 0, date: new Date("2023-01-01"), account: { currency: "USD" } }),
+      tx({ type: "SELL", quantity: 50,  unitPrice: 100, fee: 0, date: new Date("2024-01-01"), account: { currency: "EUR" } }),
+    ];
+
+    const cfs = buildXirrCashFlows(transactions, fxRate, 5000, asOf);
+    const result = xirr(cfs);
+
+    // buildXirrCashFlows preserves insertion order: BUY, SELL, terminal.
+    // (cfs[0] = BUY negative, cfs[1] = SELL positive, cfs[2] = terminal)
+    expect(cfs).toHaveLength(3);
+
+    // Verify the BUY is unchanged (USD, no FX multiplier)
+    expect(cfs[0].amount).toBeCloseTo(-10000, 2);
+
+    // Verify the SELL was FX-converted correctly: 50 * 100 * 1.10 = 5500
+    // (cfs[1] is the only non-terminal positive flow)
+    expect(cfs[1].amount).toBeCloseTo(5500, 2);
+
+    // Verify the terminal value is passed through unchanged (already in USD)
+    expect(cfs[2].amount).toBe(5000);
+  });
+});
+

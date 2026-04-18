@@ -111,7 +111,10 @@ describe("Dividend Actions", () => {
 
   describe("importAllDividendsAction", () => {
     it("aggregates results across symbols", async () => {
-      vi.mocked(txRepo.findAllSymbols).mockResolvedValue(["AAPL", "SHOP"]);
+      vi.mocked(txRepo.findAllSymbols).mockResolvedValue([
+        { symbol: "AAPL", instrumentType: "EQUITY", instrumentProvider: "YAHOO" },
+        { symbol: "SHOP", instrumentType: "EQUITY", instrumentProvider: "YAHOO" },
+      ]);
 
       // Override importDividends internally or just mock the dependencies
       vi.mocked(finance.getFinanceProvider).mockReturnValue({

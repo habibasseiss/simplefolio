@@ -1,14 +1,24 @@
 import { prisma } from "@/lib/prisma";
 
-export async function upsertSymbol(
-  ticker: string,
-  name: string | null,
-  exchange: string | null,
-) {
+export interface UpsertSymbolOptions {
+  ticker: string;
+  name: string | null;
+  exchange: string | null;
+  instrumentType?: string;
+  instrumentProvider?: string;
+}
+
+export async function upsertSymbol({
+  ticker,
+  name,
+  exchange,
+  instrumentType = "EQUITY",
+  instrumentProvider = "YAHOO",
+}: UpsertSymbolOptions) {
   await prisma.symbol.upsert({
     where: { ticker },
-    create: { ticker, name, exchange },
-    update: { name, exchange },
+    create: { ticker, name, exchange, instrumentType, instrumentProvider },
+    update: { name, exchange, instrumentType, instrumentProvider },
   });
 }
 
@@ -17,10 +27,20 @@ export async function upsertSymbol(
  * Never overwrites an existing name/exchange — safe to call from batch import
  * where we only know the ticker.
  */
-export async function ensureSymbol(ticker: string) {
+export async function ensureSymbol(
+  ticker: string,
+  instrumentType = "EQUITY",
+  instrumentProvider = "YAHOO",
+) {
   await prisma.symbol.upsert({
     where: { ticker },
-    create: { ticker, name: null, exchange: null },
+    create: {
+      ticker,
+      name: null,
+      exchange: null,
+      instrumentType,
+      instrumentProvider,
+    },
     update: {}, // keep existing name/exchange intact
   });
 }
