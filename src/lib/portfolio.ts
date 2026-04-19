@@ -164,10 +164,22 @@ function computePortfolioChart(
   const symbols = [...priceHistoryMap.keys()];
   if (symbols.length === 0) return [];
 
+  // Find the date of the earliest BUY transaction so we don't render a flat
+  // zero section before any money was invested.
+  const buyTxs = transactions.filter((tx) => tx.type === "BUY");
+  const firstBuyDate = buyTxs.length > 0
+    ? buyTxs.reduce<Date>((min, tx) => {
+      const d = new Date(tx.date);
+      return d < min ? d : min;
+    }, new Date(buyTxs[0].date))
+    : null;
+
   // Collect all unique week dates across all symbols
   const weekSet = new Set<string>();
   for (const rows of priceHistoryMap.values()) {
     for (const row of rows) {
+      // Skip weeks that pre-date the first investment
+      if (firstBuyDate && row.date < firstBuyDate) continue;
       weekSet.add(row.date.toISOString().split("T")[0]);
     }
   }

@@ -23,9 +23,9 @@ import { Suspense } from "react"
 export default async function AllHoldingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string; category?: string; currency?: string }>
+  searchParams: Promise<{ from?: string; to?: string; types?: string; category?: string; currency?: string }>
 }) {
-  const { from, to, category: rawCategory, currency: rawCurrency } = await searchParams
+  const { from, to, types: rawTypes, category: rawCategory, currency: rawCurrency } = await searchParams
 
   const displayCurrency = resolveDisplayCurrency(rawCurrency)
 
@@ -33,6 +33,12 @@ export default async function AllHoldingsPage({
   type AssetCategory = (typeof VALID_CATEGORIES)[number]
   const activeCategory = rawCategory
     ? rawCategory.split(",").filter((c): c is AssetCategory => (VALID_CATEGORIES as readonly string[]).includes(c))
+    : null
+
+  const VALID_TYPES = ["BUY", "SELL", "DIVIDEND"] as const
+  type TxType = (typeof VALID_TYPES)[number]
+  const activeTypes = rawTypes
+    ? rawTypes.split(",").filter((t: string): t is TxType => (VALID_TYPES as readonly string[]).includes(t))
     : null
   const userId = await getDefaultUserId()
   const [allTransactions, symbols] = await Promise.all([
@@ -77,6 +83,7 @@ export default async function AllHoldingsPage({
 
   const transactions = allTransactions.filter((tx) => {
     if (!isCategoryMatch(tx.symbol)) return false
+    if (activeTypes && activeTypes.length > 0 && !activeTypes.includes(tx.type as TxType)) return false
     const d = new Date(tx.date)
     if (fromDate && d < fromDate) return false
     if (toDate && d > toDate) return false
@@ -112,7 +119,7 @@ export default async function AllHoldingsPage({
           <SymbolDateFilter from={from} to={to} />
         </Suspense>
         <Suspense>
-          <AccountTypeFilter activeTypes={null} activeCategory={activeCategory} />
+          <AccountTypeFilter activeTypes={activeTypes} activeCategory={activeCategory} />
         </Suspense>
         {DISPLAY_CURRENCIES.length > 1 && (
           <Suspense>

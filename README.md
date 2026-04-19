@@ -4,12 +4,42 @@ A self-hosted personal wealth management app built with Next.js, Prisma, and Pos
 
 ## Features
 
-- **Accounts** — manage multiple investment accounts with different currencies
-- **Transactions** — record buy, sell, and dividend transactions per account
-- **Holdings** — aggregate portfolio view across all accounts
-- **Dashboard** — portfolio value over time and dividend income charts
-- **Symbol search** — instrument metadata and price history synced from Yahoo Finance
-- **Import** — bulk import transactions and dividends
+### 📊 Portfolio Management & Analytics
+- **Multi-Account & Multi-Currency** — Create and manage several investment accounts spanning different fiat currencies. Includes on-the-fly, automated FX rate conversions to view your aggregated portfolio accurately in a base currency.
+- **Advanced Return Metrics (XIRR)** — Deep, money-weighted annualized return calculations that accurately reflect the timings of buys, sells, and dividends, seamlessly backing out DRIP events for pristine performance numbers.
+- **Interactive Dashboards** — Visualize total portfolio value over time and track your monthly/annual dividend income using dynamic charts.
+- **Aggregate Holdings** — See your consolidated position for each asset across all accounts in your portfolio.
+
+### 💼 Transactions & Cash Flows
+- **Granular Transaction Types** — Record BUYS, SELLS, and DIVIDEND payments manually or via bulk imports.
+- **DRIP & Tax Support** — First-class support for Dividend Reinvestment Plans (DRIP) and the ability to apply non-resident alien (NRA) withholding taxes on dividend income.
+- **Automated Dividend Imports** — Stay on top of your passive income with an automated daily background task that syncs new dividends to your accounts.
+
+### 🌎 Global Asset Coverage
+- **Equities & ETFs** — Seamless symbol search, metadata resolution, and historical price syncing powered by Yahoo Finance.
+- **Sovereign Bonds (Tesouro Direto)** — Fully integrated support for Brazilian government bonds (Tesouro Direto). Accurately fetch daily unit prices (PU) and chart bond performance out of the box.
+
+### 🛠 Data Portability & Health
+- **Bulk Import / Export** — Easily migrate or back up your transaction history via CSV. Automatically identifies accounts, asset classes, and parses foreign currencies.
+- **Robust Integration Testing** — Covered extensively by unit tests (Vitest) for mission-critical domain logic and Patrol integration tests to ensure reliable, unbreakable releases.
+
+## Finance Integrations Architecture
+
+Simplefolio uses a decoupled **DataProvider** registry to connect with external financial APIs and markets. This ensures the application logic is completely agnostic of the underlying data source, whether it's Yahoo Finance, a local central bank, or a custom internal API.
+
+### Current Providers
+
+1. **Yahoo Finance (`YAHOO`)**: The default provider tailored for global equities, ETFs, and mutual funds. Handles standard ticker symbols (e.g. `AAPL`, `VT`).
+2. **Tesouro Direto (`TESOURO`)**: A specialized integration tailored for Brazilian sovereign bonds. Handles parsing proprietary bond names (e.g. `Tesouro Selic 2029`), resolving them into internal canonical tickers (e.g. `TD:TESOURO_SELIC_2029`), and fetching accurate unit prices (PU) directly from the Brazilian treasury endpoint.
+
+### Adding a New Data Source
+
+To add a new bond or equity provider (for example, US Treasury Direct or a Crypto exchange), follow these steps:
+
+1. **Implement `DataProvider`**: Create a new class under `src/lib/providers/` that implements the `DataProvider` interface. You must define a unique `id` (e.g., `TREASURY_DIRECT`), an `instrumentType` (e.g., `BOND`), and implement the `syncPriceHistory(ticker, fromDate)` method to fetch and map data into standard `PriceCandle` models.
+2. **Register the Provider**: In the same file, instantiate your class and call `registerProvider(myNewProvider)` from the registry.
+3. **Load the Provider**: Add a side-effect import for your new provider file inside `src/lib/providers/index.ts` to ensure it boots up when the app initializes.
+4. **Action & UI Layer**: Update or create server actions and UI components that save transactions with the `instrumentProvider` matching your provider's `id`. The core system will automatically route pricing syncs, chart aggregations, and currency conversions using the centralized registry based on this ID.
 
 ## Tech stack
 

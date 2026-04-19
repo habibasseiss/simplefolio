@@ -11,10 +11,10 @@ const CURRENCY_LOCALE: Record<string, string> = {
   AUD: "en-AU",
   JPY: "ja-JP",
   CHF: "de-CH",
-}
+};
 
 export function getCurrencyLocale(currency: string): string {
-  return CURRENCY_LOCALE[currency] ?? "en-US"
+  return CURRENCY_LOCALE[currency] ?? "en-US";
 }
 
 export function formatDate(date: Date) {
@@ -34,9 +34,9 @@ export function formatCurrency(value: number, currency = "USD") {
 }
 
 export function formatNumber(value: number, decimals = 2) {
+  const isRound = Number.isInteger(value);
   return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: decimals,
+    minimumFractionDigits: isRound ? 0 : decimals,
     maximumFractionDigits: decimals,
   }).format(value);
 }
-

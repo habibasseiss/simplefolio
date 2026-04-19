@@ -2,6 +2,7 @@ import { AllocationChart } from "@/components/allocation-chart"
 import { CurrencyToggle } from "@/components/currency-toggle"
 import { DividendIncomeChart } from "@/components/dividend-income-chart"
 import { SetActions, SetHeader } from "@/components/header-context"
+import { MonthlyInvestmentChart } from "@/components/monthly-investment-chart"
 import { Page } from "@/components/page"
 import { PortfolioPerformanceChart } from "@/components/portfolio-performance-chart"
 import { PortfolioStatsCard } from "@/components/portfolio-stats-card"
@@ -227,6 +228,31 @@ export default async function DashboardPage({
   // Calculate XIRR for Annualized Return
   const xirrCashFlows = buildXirrCashFlows(allTransactions, rate, totalValueUsd)
   const annualizedReturn = xirr(xirrCashFlows)
+
+  // ── Monthly investment (last 12 months, in display currency) ─────────
+  const now = new Date()
+  const monthlyInvestmentData = Array.from({ length: 12 }, (_, i) => {
+    const d2 = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
+    const shortYear = String(d2.getFullYear()).slice(-2)
+    return {
+      month: `${d2.toLocaleString("default", { month: "short" })}/${shortYear}`,
+      year: d2.getFullYear(),
+      monthNum: d2.getMonth(),
+      amount: 0,
+    }
+  })
+  for (const tx of allTransactions) {
+    if (tx.type !== "BUY" || tx.isDrip) continue
+    const txDate = new Date(tx.date)
+    const txYear = txDate.getFullYear()
+    const txMonth = txDate.getMonth()
+    const slot = monthlyInvestmentData.find(
+      (s) => s.year === txYear && s.monthNum === txMonth,
+    )
+    if (slot) {
+      slot.amount += calcTransactionTotal(tx) * rate(tx.account.currency) * displayRate
+    }
+  }
 
   const sortedPositions = [...positions].sort(
     (a, b) => (b.valueUsd ?? 0) - (a.valueUsd ?? 0),
@@ -468,6 +494,12 @@ export default async function DashboardPage({
               </Table>
             </CardContent>
           </Card>
+
+          {/* ── Monthly Investment Chart ──────────────────────────── */}
+          <MonthlyInvestmentChart
+            data={monthlyInvestmentData.map(({ month, amount }) => ({ month, amount }))}
+            currency={displayCurrency}
+          />
 
           {/* ── Recent Transactions ───────────────────────────────── */}
           <Card>
