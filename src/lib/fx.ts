@@ -1,24 +1,19 @@
 import { getFinanceProvider } from "@/lib/finance";
 import { unstable_cache } from "next/cache";
 
-/**
- * Fetch a single FX rate, cached for 24 hours via Next.js data cache.
- * The cache key includes both currency codes so each pair is cached separately.
- */
-const _fetchRate = unstable_cache(
-  async (from: string, to: string): Promise<number> => {
-    if (from === to) return 1;
-    return getFinanceProvider().getExchangeRate(from, to);
-  },
-  ["fx-rate"],
-  { revalidate: 86400 }, // 24 hours
-);
-
 export async function getExchangeRate(
   from: string,
   to: string,
 ): Promise<number> {
-  return _fetchRate(from, to);
+  if (from === to) return 1;
+
+  return unstable_cache(
+    async () => {
+      return getFinanceProvider().getExchangeRate(from, to);
+    },
+    ["fx-rate", from, to],
+    { revalidate: 86400, tags: ["global-data-cache"] }, // 24 hours
+  )();
 }
 
 /**

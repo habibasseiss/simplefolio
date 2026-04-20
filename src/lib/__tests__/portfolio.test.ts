@@ -24,6 +24,31 @@ describe('Portfolio Utils', () => {
       // value on week 2: 10 * 120 = 1200
       expect(chart[1].value).toBe(1200);
     });
+
+    it('correctly sorts transactions and handles SELL proportional cost deduction', () => {
+      // Mock transactions fed in random/descending order
+      const transactions = [
+        { symbol: 'AAPL', type: 'SELL', date: new Date('2024-02-01'), quantity: 5, unitPrice: 150, fee: 2 },
+        { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-10'), quantity: 5, unitPrice: 110, fee: 0 },
+        { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-01'), quantity: 5, unitPrice: 90, fee: 0 },
+      ];
+
+      const priceHistory = [
+        { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-02-05'), close: 160, id: '1', createdAt: new Date() },
+      ];
+
+      const chart = computeSymbolChart(transactions, priceHistory);
+      
+      // Breakdown of chronology inside the loop:
+      // Jan 1: BUY 5 @ 90 = $450 cost (shares: 5)
+      // Jan 10: BUY 5 @ 110 = $550 cost (cumulative cost: $1000, shares: 10)
+      // Feb 1: SELL 5. Avg Cost = $1000 / 10 = $100.
+      // Proportional deduction: 5 * 100 = $500. Remaining cost: $500.
+      
+      expect(chart).toHaveLength(1);
+      expect(chart[0].cost).toBe(500); // Cost basis is accurately $500!
+      expect(chart[0].value).toBe(5 * 160); // Remaining 5 shares * $160
+    });
   });
 
   describe('computeOverallChart', () => {

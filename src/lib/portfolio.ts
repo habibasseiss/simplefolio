@@ -97,9 +97,9 @@ export function computeSymbolChart(
   transactions: PortfolioTx[],
   priceHistory: PriceHistoryRow[],
 ): ChartPoint[] {
-  const symbolTxs = transactions.filter(
-    (tx) => tx.type === "BUY" || tx.type === "SELL",
-  );
+  const symbolTxs = [...transactions]
+    .filter((tx) => tx.type === "BUY" || tx.type === "SELL")
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   if (symbolTxs.length === 0 || priceHistory.length === 0) return [];
 
   const symbol = priceHistory[0].symbol;
@@ -164,9 +164,13 @@ function computePortfolioChart(
   const symbols = [...priceHistoryMap.keys()];
   if (symbols.length === 0) return [];
 
+  const sortedTxs = [...transactions]
+    .filter((tx) => tx.type === "BUY" || tx.type === "SELL")
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
   // Find the date of the earliest BUY transaction so we don't render a flat
   // zero section before any money was invested.
-  const buyTxs = transactions.filter((tx) => tx.type === "BUY");
+  const buyTxs = sortedTxs.filter((tx) => tx.type === "BUY");
   const firstBuyDate = buyTxs.length > 0
     ? buyTxs.reduce<Date>((min, tx) => {
       const d = new Date(tx.date);
@@ -200,7 +204,7 @@ function computePortfolioChart(
       const row = [...rows].reverse().find((r) => r.date <= weekEnd);
       if (!row) continue;
 
-      const symbolTxs = transactions.filter((tx) => tx.symbol === symbol);
+      const symbolTxs = sortedTxs.filter((tx) => tx.symbol === symbol);
       const shares = sharesAt(symbolTxs, symbol, weekEnd);
       const cost = costAt(symbolTxs, symbol, weekEnd, fxRates);
       const priceFx = fxRates?.get(row.currency) ?? 1;
