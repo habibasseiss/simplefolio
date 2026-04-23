@@ -13,6 +13,10 @@ export interface PortfolioStatsProps {
   netWorth: number
   /** Pre-computed XIRR (money-weighted annualized return), or null if it cannot be calculated */
   annualizedReturn: number | null
+  /** Cumulative Time-Weighted Return (TWR), or null if no data */
+  twr: number | null
+  /** Total dividends received all-time */
+  totalDividends: number
   currency: string
 }
 
@@ -44,6 +48,8 @@ export function PortfolioStatsCard({
   grossPerformance,
   netWorth,
   annualizedReturn,
+  twr,
+  totalDividends,
   currency,
 }: PortfolioStatsProps) {
   const grossPct = investment > 0 ? (grossPerformance / investment) * 100 : null
@@ -58,7 +64,13 @@ export function PortfolioStatsCard({
       </CardHeader>
       <CardContent className="pt-0">
         <Row label="Time in Market">{firstInvestmentTs !== null ? formatYears(firstInvestmentTs) : "—"}</Row>
-        <Row label="Investment">{formatCurrency(investment, currency)}</Row>
+        <Row label="Total Cost Basis">{formatCurrency(investment, currency)}</Row>
+        <Row label="Net Worth">{formatCurrency(netWorth, currency)}</Row>
+        <Row label="Total Dividends">
+          <span className="text-blue-600 dark:text-blue-400">
+            {formatCurrency(totalDividends, currency)}
+          </span>
+        </Row>
         <Row label="Absolute Gross Performance">
           <span className={grossPerformance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
             {grossPerformance >= 0 ? "+" : ""}
@@ -70,8 +82,17 @@ export function PortfolioStatsCard({
             )}
           </span>
         </Row>
-        <Row label="Net Worth">{formatCurrency(netWorth, currency)}</Row>
-        <Row label="Annualized Performance">
+        <Row label="Time-Weighted Return (TWR)">
+          {twr !== null ? (
+            <span className={twr >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
+              {twr >= 0 ? "+" : ""}
+              {(twr * 100).toFixed(2)}%
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </Row>
+        <Row label="Annualized Performance (XIRR)">
           {annualizedReturn !== null ? (
             <span className={annualizedReturn >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
               {annualizedReturn >= 0 ? "+" : ""}

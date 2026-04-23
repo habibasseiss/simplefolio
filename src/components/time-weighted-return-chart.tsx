@@ -13,9 +13,9 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card"
 import {
   ChartContainer,
@@ -31,8 +31,8 @@ import type { ChartPoint } from "@/lib/portfolio"
 import * as React from "react"
 
 const chartConfig = {
-  performance: {
-    label: "Return",
+  twr: {
+    label: "TWR",
     color: "transparent",
   },
 } satisfies ChartConfig
@@ -40,15 +40,15 @@ const chartConfig = {
 const GREEN = "#16a34a"
 const RED = "var(--destructive)"
 
-interface PortfolioPerformanceChartProps {
+interface TimeWeightedReturnChartProps {
   data: ChartPoint[]
   description?: string
 }
 
-export function PortfolioPerformanceChart({
+export function TimeWeightedReturnChart({
   data,
-  description = "Weekly portfolio return vs cost basis",
-}: PortfolioPerformanceChartProps) {
+  description = "Time-Weighted Return (TWR)",
+}: TimeWeightedReturnChartProps) {
   const [timeRange, setTimeRange] = React.useState("Total")
 
   const filteredData = React.useMemo(() => {
@@ -75,17 +75,22 @@ export function PortfolioPerformanceChart({
     return null
   }
 
+  // TWR is a geometric measure. To show the TWR *during* a selected time period,
+  // we must divide out the growth that occurred before the period started.
+  // TWR_period = (1 + TWR_current) / (1 + TWR_start) - 1
+  const baseTwr = filteredData[0]?.twr ?? 0
+
   const formatted = filteredData.map((d) => ({
     date: d.date,
-    performance: d.cost > 0 ? ((d.value - d.cost) / d.cost) * 100 : 0,
+    twr: ((1 + d.twr) / (1 + baseTwr) - 1) * 100,
   }))
 
-  const latestPct = formatted[formatted.length - 1]?.performance ?? 0
+  const latestPct = formatted[formatted.length - 1]?.twr ?? 0
 
   const isPositive = latestPct >= 0
 
   // Calculate where 0% sits in the chart (0 = top, 1 = bottom) for the gradient
-  const perfValues = formatted.map((d) => d.performance)
+  const perfValues = formatted.map((d) => d.twr)
   const minPerf = Math.min(...perfValues)
   const maxPerf = Math.max(...perfValues)
   const range = maxPerf - minPerf
@@ -137,12 +142,12 @@ export function PortfolioPerformanceChart({
           <AreaChart data={formatted}>
             <defs>
               {/* Stroke gradient: green above 0%, red below */}
-              <linearGradient id="strokePerformance" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="strokeTwr" x1="0" y1="0" x2="0" y2="1">
                 <stop offset={zeroPct} stopColor={GREEN} />
                 <stop offset={zeroPct} stopColor={RED} />
               </linearGradient>
               {/* Fill gradient: green-tinted above 0%, red-tinted below */}
-              <linearGradient id="fillPerformance" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="fillTwr" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={GREEN} stopOpacity={0.25} />
                 <stop offset={zeroPct} stopColor={GREEN} stopOpacity={0.05} />
                 <stop offset={zeroPct} stopColor={RED} stopOpacity={0.05} />
@@ -195,10 +200,10 @@ export function PortfolioPerformanceChart({
             />
             <ReferenceLine y={0} stroke="var(--border)" />
             <Area
-              dataKey="performance"
+              dataKey="twr"
               type="monotone"
-              fill="url(#fillPerformance)"
-              stroke="url(#strokePerformance)"
+              fill="url(#fillTwr)"
+              stroke="url(#strokeTwr)"
               strokeWidth={2}
               dot={false}
             />
@@ -208,11 +213,15 @@ export function PortfolioPerformanceChart({
       {formatted.length > 0 && (
         <CardFooter className="px-2 pb-4 sm:px-6 sm:pb-6 text-sm text-muted-foreground leading-relaxed">
           <p>
-            This means that your current total portfolio value is{" "}
+            This means that the assets held in this portfolio have organically {isPositive ? "grown" : "declined"} by {Math.abs(latestPct).toFixed(2)}% since{" "}
             <span className="font-medium text-foreground">
-              {Math.abs(latestPct).toFixed(2)}%
-            </span>{" "}
-            {isPositive ? "higher" : "lower"} than the total net amount of cash you have invested into it (your total cost basis).
+              {new Date(formatted[0].date + "T00:00:00Z").toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+                timeZone: "UTC",
+              })}
+            </span>
+            , isolating the true performance from the distorting effects of any cash you deposited or withdrew during this period.
           </p>
         </CardFooter>
       )}

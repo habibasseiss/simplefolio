@@ -24,6 +24,8 @@ export interface ChartPoint {
   value: number;
   /** Cost basis at this week */
   cost: number;
+  /** Cumulative Time-Weighted Return (TWR) up to this week */
+  twr: number;
 }
 
 /**
@@ -88,6 +90,35 @@ function costAt(
 }
 
 /**
+ * Computes the net cash flow (deposits minus withdrawals) between two dates.
+ * BUY = cash added to portfolio (+). SELL = cash removed from portfolio (-).
+ */
+function netCashFlowBetween(
+  txs: PortfolioTx[],
+  symbol: string | null,
+  fromDate: Date | null,
+  toDate: Date,
+  fxRates?: Map<string, number>,
+): number {
+  let flow = 0;
+  for (const tx of txs) {
+    if (symbol && tx.symbol !== symbol) continue;
+    if (tx.type !== "BUY" && tx.type !== "SELL") continue;
+
+    const d = new Date(tx.date);
+    if ((!fromDate || d > fromDate) && d <= toDate) {
+      const txFx = fxRates?.get(tx.accountCurrency ?? "USD") ?? 1;
+      if (tx.type === "BUY") {
+        flow += (tx.quantity * tx.unitPrice + tx.fee) * txFx;
+      } else if (tx.type === "SELL") {
+        flow -= (tx.quantity * tx.unitPrice - tx.fee) * txFx;
+      }
+    }
+  }
+  return flow;
+}
+
+/**
  * Builds a weekly chart series for a single symbol.
  *
  * @param transactions - All BUY/SELL transactions for this symbol (any order).
@@ -104,17 +135,34 @@ export function computeSymbolChart(
 
   const symbol = priceHistory[0].symbol;
 
+  let prevValue = 0;
+  let prevWeekEnd: Date | null = null;
+  let currentTwr = 0;
+
   return priceHistory.map((row) => {
     const weekEnd = new Date(row.date);
     weekEnd.setDate(weekEnd.getDate() + 6);
 
     const shares = sharesAt(symbolTxs, symbol, weekEnd);
     const cost = costAt(symbolTxs, symbol, weekEnd);
+    const value = shares * row.close;
+
+    const cf = netCashFlowBetween(symbolTxs, symbol, prevWeekEnd, weekEnd);
+    const denominator = prevValue + cf;
+    
+    // If denominator is <= 0, it means no capital was deployed at the start of the period
+    // (e.g. the very first week). Return for that period is considered 0.
+    const periodReturn = denominator > 0 ? (value - denominator) / denominator : 0;
+    
+    currentTwr = (1 + currentTwr) * (1 + periodReturn) - 1;
+    prevValue = value;
+    prevWeekEnd = weekEnd;
 
     return {
       date: row.date.toISOString().split("T")[0],
-      value: shares * row.close,
+      value,
       cost,
+      twr: currentTwr,
     };
   });
 }
@@ -190,6 +238,10 @@ function computePortfolioChart(
 
   const weeks = [...weekSet].sort();
 
+  let prevValue = 0;
+  let prevWeekEnd: Date | null = null;
+  let currentTwr = 0;
+
   return weeks.map((week) => {
     const weekDate = new Date(week + "T00:00:00Z");
     const weekEnd = new Date(weekDate);
@@ -213,6 +265,19 @@ function computePortfolioChart(
       totalCost += cost;
     }
 
-    return { date: week, value: totalValue, cost: totalCost };
+    const cf = netCashFlowBetween(sortedTxs, null, prevWeekEnd, weekEnd, fxRates);
+    const denominator = prevValue + cf;
+    const periodReturn = denominator > 0 ? (totalValue - denominator) / denominator : 0;
+    
+    currentTwr = (1 + currentTwr) * (1 + periodReturn) - 1;
+    prevValue = totalValue;
+    prevWeekEnd = weekEnd;
+
+    return { 
+      date: week, 
+      value: totalValue, 
+      cost: totalCost,
+      twr: currentTwr 
+    };
   });
 }

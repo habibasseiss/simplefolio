@@ -6,6 +6,7 @@ import { MonthlyInvestmentChart } from "@/components/monthly-investment-chart"
 import { Page } from "@/components/page"
 import { PortfolioPerformanceChart } from "@/components/portfolio-performance-chart"
 import { PortfolioStatsCard } from "@/components/portfolio-stats-card"
+import { TimeWeightedReturnChart } from "@/components/time-weighted-return-chart"
 import { TransactionTypeBadge } from "@/components/transaction-type-badge"
 import {
   Card,
@@ -365,6 +366,13 @@ export default async function DashboardPage({
             </Card>
           </div>
 
+          {/* ── Time Weighted Return Chart ───────────────────────── */}
+          {chartData.length > 0 && (
+            <TimeWeightedReturnChart
+              data={chartData}
+            />
+          )}
+
           {/* ── Portfolio Performance Chart ───────────────────────── */}
           {chartData.length > 0 && (
             <PortfolioPerformanceChart
@@ -384,6 +392,8 @@ export default async function DashboardPage({
                 grossPerformance={grossPerformance}
                 netWorth={totalValue}
                 annualizedReturn={annualizedReturn}
+                twr={chartData.length > 0 ? chartData[chartData.length - 1].twr : null}
+                totalDividends={totalDividends}
                 currency={displayCurrency}
               />
             </div>
