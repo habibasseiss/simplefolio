@@ -15,6 +15,7 @@ interface AccountFormProps {
     id?: string
     name?: string
     currency?: string
+    website?: string | null
   }
   submitLabel?: string
 }
@@ -59,6 +60,22 @@ export function AccountForm({
         {state.fieldErrors?.currency && (
           <p className="text-sm text-destructive">
             {state.fieldErrors.currency[0]}
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="website">Website</Label>
+        <Input
+          id="website"
+          name="website"
+          type="url"
+          placeholder="e.g. https://www.chase.com"
+          defaultValue={defaultValues?.website ?? ""}
+        />
+        {state.fieldErrors?.website && (
+          <p className="text-sm text-destructive">
+            {state.fieldErrors.website[0]}
           </p>
         )}
       </div>

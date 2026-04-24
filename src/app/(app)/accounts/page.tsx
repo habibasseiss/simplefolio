@@ -1,3 +1,4 @@
+import { AccountFavicon } from "@/components/account-favicon"
 import { SetActions, SetHeader } from "@/components/header-context"
 import { Page } from "@/components/page"
 import { Badge } from "@/components/ui/badge"
@@ -49,9 +50,14 @@ export default async function AccountsPage() {
               <Link href={`/accounts/${account.id}`} className="absolute inset-0" aria-label={account.name} />
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <span className='flex flex-row items-baseline gap-2'>
-                    <CardTitle className="text-base">{account.name}</CardTitle>
-                    <Badge variant="secondary">{account.currency}</Badge>
+                  <span className='flex flex-row items-center gap-2'>
+                    {account.website && (
+                      <AccountFavicon website={account.website} size={20} className="rounded-sm shrink-0" />
+                    )}
+                    <span className="flex flex-row items-baseline gap-2">
+                      <CardTitle className="text-base">{account.name}</CardTitle>
+                      <Badge variant="secondary">{account.currency}</Badge>
+                    </span>
                   </span>
                   <Button variant="ghost" size="icon" className="relative z-10" asChild>
                     <Link href={`/accounts/${account.id}/edit`}>
@@ -75,3 +81,4 @@ export default async function AccountsPage() {
     </Page>
   )
 }
+

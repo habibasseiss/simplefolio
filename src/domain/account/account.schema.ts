@@ -6,6 +6,11 @@ export const createAccountSchema = z.object({
     .string()
     .length(3, "Currency must be a 3-letter ISO 4217 code")
     .toUpperCase(),
+  website: z
+    .string()
+    .url("Must be a valid URL (e.g. https://example.com)")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const updateAccountSchema = createAccountSchema.partial();

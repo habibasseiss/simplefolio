@@ -20,6 +20,7 @@ model Account {
   id           String        @id @default(cuid())
   name         String
   currency     String // ISO 4217, e.g. "USD", "EUR", "CAD"
+  website      String? // Bank/broker website URL used for favicon lookup
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]

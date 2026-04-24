@@ -830,6 +830,7 @@ export const AccountScalarFieldEnum = {
   id: 'id',
   name: 'name',
   currency: 'currency',
+  website: 'website',
   userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

@@ -26,7 +26,7 @@ export default async function EditAccountPage({
       </SetHeader>
       <AccountForm
         action={action}
-        defaultValues={{ id: account.id, name: account.name, currency: account.currency }}
+        defaultValues={{ id: account.id, name: account.name, currency: account.currency, website: account.website }}
         submitLabel="Save Changes"
       />
     </Page>
