@@ -388,6 +388,7 @@ export const ModelName = {
   Account: 'Account',
   Transaction: 'Transaction',
   PriceHistory: 'PriceHistory',
+  FxRateHistory: 'FxRateHistory',
   Symbol: 'Symbol'
 } as const
 
@@ -404,7 +405,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "transaction" | "priceHistory" | "symbol"
+    modelProps: "user" | "account" | "transaction" | "priceHistory" | "fxRateHistory" | "symbol"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -704,6 +705,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    FxRateHistory: {
+      payload: Prisma.$FxRateHistoryPayload<ExtArgs>
+      fields: Prisma.FxRateHistoryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FxRateHistoryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FxRateHistoryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload>
+        }
+        findFirst: {
+          args: Prisma.FxRateHistoryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FxRateHistoryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload>
+        }
+        findMany: {
+          args: Prisma.FxRateHistoryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload>[]
+        }
+        create: {
+          args: Prisma.FxRateHistoryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload>
+        }
+        createMany: {
+          args: Prisma.FxRateHistoryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FxRateHistoryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload>[]
+        }
+        delete: {
+          args: Prisma.FxRateHistoryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload>
+        }
+        update: {
+          args: Prisma.FxRateHistoryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload>
+        }
+        deleteMany: {
+          args: Prisma.FxRateHistoryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FxRateHistoryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FxRateHistoryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload>[]
+        }
+        upsert: {
+          args: Prisma.FxRateHistoryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FxRateHistoryPayload>
+        }
+        aggregate: {
+          args: Prisma.FxRateHistoryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFxRateHistory>
+        }
+        groupBy: {
+          args: Prisma.FxRateHistoryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FxRateHistoryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FxRateHistoryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FxRateHistoryCountAggregateOutputType> | number
+        }
+      }
+    }
     Symbol: {
       payload: Prisma.$SymbolPayload<ExtArgs>
       fields: Prisma.SymbolFieldRefs
@@ -852,6 +927,7 @@ export const TransactionScalarFieldEnum = {
   purchaseRate: 'purchaseRate',
   nraTax: 'nraTax',
   notes: 'notes',
+  fxSnapshots: 'fxSnapshots',
   reinvestDividends: 'reinvestDividends',
   isDrip: 'isDrip',
   accountId: 'accountId',
@@ -874,6 +950,18 @@ export const PriceHistoryScalarFieldEnum = {
 export type PriceHistoryScalarFieldEnum = (typeof PriceHistoryScalarFieldEnum)[keyof typeof PriceHistoryScalarFieldEnum]
 
 
+export const FxRateHistoryScalarFieldEnum = {
+  id: 'id',
+  date: 'date',
+  currency: 'currency',
+  source: 'source',
+  buyRate: 'buyRate',
+  sellRate: 'sellRate'
+} as const
+
+export type FxRateHistoryScalarFieldEnum = (typeof FxRateHistoryScalarFieldEnum)[keyof typeof FxRateHistoryScalarFieldEnum]
+
+
 export const SymbolScalarFieldEnum = {
   ticker: 'ticker',
   name: 'name',
@@ -893,6 +981,14 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -907,6 +1003,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -954,6 +1059,20 @@ export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, '
  * Reference to a field of type 'Float[]'
  */
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -1076,6 +1195,7 @@ export type GlobalOmitConfig = {
   account?: Prisma.AccountOmit
   transaction?: Prisma.TransactionOmit
   priceHistory?: Prisma.PriceHistoryOmit
+  fxRateHistory?: Prisma.FxRateHistoryOmit
   symbol?: Prisma.SymbolOmit
 }
 

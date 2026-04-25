@@ -14,17 +14,13 @@ import {
   updateTransaction,
 } from "@/repositories/transaction.repository";
 import { getDefaultUserId } from "@/repositories/user.repository";
+import { buildPtaxSnapshotForTransaction } from "@/actions/ptax.actions";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "./account.actions";
 
-async function assertAccountOwnership(
-  accountId: string,
-  userId: string,
-): Promise<void> {
-  const account = await findAccountById(accountId, userId);
-  if (!account) throw new Error("Account not found");
-}
 
 export async function createTransactionAction(
   routeAccountId: string,
@@ -49,8 +45,22 @@ export async function createTransactionAction(
   }
 
   const userId = await getDefaultUserId();
-  await assertAccountOwnership(targetAccountId, userId);
-  await createTransaction(targetAccountId, parsed.data);
+  const account = await findAccountById(targetAccountId, userId);
+  if (!account) throw new Error("Account not found");
+
+  const tx = await createTransaction(targetAccountId, parsed.data);
+
+  // Attempt to snapshot the PTAX rate at trade time (best-effort, never blocks)
+  const fxSnapshots = await buildPtaxSnapshotForTransaction(
+    account.currency,
+    parsed.data.date,
+  );
+  if (fxSnapshots) {
+    await prisma.transaction.update({
+      where: { id: tx.id },
+      data: { fxSnapshots: fxSnapshots as unknown as Prisma.InputJsonValue },
+    });
+  }
 
   const { name, exchange } = await getFinanceProvider().getSymbolInfo(
     parsed.data.symbol,
@@ -88,11 +98,27 @@ export async function updateTransactionAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  await assertAccountOwnership(targetAccountId, userId);
+  const account = await findAccountById(targetAccountId, userId);
+  if (!account) throw new Error("Account not found");
+
   await updateTransaction(txId, originalAccountId, {
     ...parsed.data,
     accountId: targetAccountId,
   });
+
+  // Re-snapshot PTAX at the (potentially new) transaction date
+  if (parsed.data.date) {
+    const fxSnapshots = await buildPtaxSnapshotForTransaction(
+      account.currency,
+      parsed.data.date,
+    );
+    if (fxSnapshots !== null) {
+      await prisma.transaction.update({
+        where: { id: txId },
+        data: { fxSnapshots: fxSnapshots as unknown as Prisma.InputJsonValue },
+      });
+    }
+  }
 
   if (parsed.data.symbol) {
     const { name, exchange } = await getFinanceProvider().getSymbolInfo(

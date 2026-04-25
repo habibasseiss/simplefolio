@@ -19,7 +19,8 @@ import {
   LineChartIcon,
   Settings2Icon,
   TrendingUpIcon,
-  WalletIcon
+  WalletIcon,
+  FileTextIcon
 } from "lucide-react"
 
 const data = {
@@ -43,6 +44,11 @@ const data = {
       title: "Holdings",
       url: "/holdings",
       icon: <LineChartIcon />,
+    },
+    {
+      title: "Reports",
+      url: "/reports",
+      icon: <FileTextIcon />,
     },
   ],
   navSecondary: [

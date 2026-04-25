@@ -62,6 +62,11 @@ export type Transaction = Prisma.TransactionModel
  */
 export type PriceHistory = Prisma.PriceHistoryModel
 /**
+ * Model FxRateHistory
+ * 
+ */
+export type FxRateHistory = Prisma.FxRateHistoryModel
+/**
  * Model Symbol
  * 
  */

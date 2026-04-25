@@ -10,6 +10,8 @@ import {
   createTransactionAction,
   deleteTransactionAction,
 } from "../transaction.actions";
+import * as ptaxActions from "@/actions/ptax.actions";
+import { prisma } from "@/lib/prisma";
 
 vi.mock("@/repositories/account.repository");
 vi.mock("@/repositories/symbol.repository");
@@ -17,6 +19,10 @@ vi.mock("@/repositories/transaction.repository");
 vi.mock("@/repositories/user.repository");
 vi.mock("@/lib/finance");
 vi.mock("next/cache");
+vi.mock("@/actions/ptax.actions");
+vi.mock("@/lib/prisma", () => ({
+  prisma: { transaction: { update: vi.fn() } },
+}));
 
 class RedirectError extends Error {}
 vi.mock("next/navigation", () => ({
@@ -33,6 +39,7 @@ describe("Transaction Actions", () => {
       id: "acc-1",
       name: "TFSA",
       currency: "CAD",
+      website: null,
       userId: "user-1",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -44,6 +51,8 @@ describe("Transaction Actions", () => {
       }),
       getDividends: vi.fn(),
     } as any);
+    vi.mocked(ptaxActions.buildPtaxSnapshotForTransaction).mockResolvedValue(null);
+    vi.mocked(prisma.transaction.update).mockResolvedValue({} as any);
   });
 
   describe("createTransactionAction", () => {
@@ -76,6 +85,36 @@ describe("Transaction Actions", () => {
         exchange: "NASDAQ",
       });
       expect(cache.revalidatePath).toHaveBeenCalledWith("/accounts/acc-1");
+    });
+
+    it("attaches fxSnapshots if available", async () => {
+      vi.mocked(txRepo.createTransaction).mockResolvedValue({ id: "tx-123" } as any);
+      vi.mocked(ptaxActions.buildPtaxSnapshotForTransaction).mockResolvedValue({
+        "CAD/BRL": { source: "PTAX", buy: 3.5, sell: 3.6 },
+      });
+
+      const formData = new FormData();
+      formData.append("type", "BUY");
+      formData.append("symbol", "AAPL");
+      formData.append("date", "2024-03-01T00:00:00Z");
+      formData.append("quantity", "10");
+      formData.append("unitPrice", "150");
+
+      try {
+        await createTransactionAction("acc-1", {}, formData);
+      } catch (e) {
+        expect(e).toBeInstanceOf(RedirectError);
+      }
+
+      expect(ptaxActions.buildPtaxSnapshotForTransaction).toHaveBeenCalledWith("CAD", new Date("2024-03-01T00:00:00Z"));
+      expect(prisma.transaction.update).toHaveBeenCalledWith({
+        where: { id: "tx-123" },
+        data: {
+          fxSnapshots: {
+            "CAD/BRL": { source: "PTAX", buy: 3.5, sell: 3.6 },
+          },
+        },
+      });
     });
 
     it("throws error if account not found", async () => {

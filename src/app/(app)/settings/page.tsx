@@ -2,8 +2,9 @@ import { SetHeader } from "@/components/header-context"
 import { ImportAllDividendsButton } from "@/components/import-all-dividends-button"
 import { Page } from "@/components/page"
 import { SyncPriceHistoryButton } from "@/components/sync-price-history-button"
+import { SyncPtaxButton } from "@/components/sync-ptax-button"
 import { ClearCacheButton } from "@/components/clear-cache-button"
-import { ArrowRightIcon, BarChart2Icon, DownloadIcon, EraserIcon, RefreshCwIcon, UploadIcon } from "lucide-react"
+import { ArrowRightIcon, BarChart2Icon, DownloadIcon, EraserIcon, RefreshCwIcon, UploadIcon, GlobeIcon } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -108,6 +109,24 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex">
                     <ClearCacheButton />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sync & Backfill PTAX — inline action */}
+            <div className="rounded-lg border p-4">
+              <div className="flex items-start gap-3">
+                <GlobeIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                <div className="flex flex-1 flex-col gap-3">
+                  <div>
+                    <p className="text-sm font-medium">Sync & Backfill PTAX</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      Fetches official BCB PTAX closing rates for all transaction dates across foreign currency accounts, and backfills the FX snapshot for past transactions. Essential for Brazilian tax reporting.
+                    </p>
+                  </div>
+                  <div className="flex">
+                    <SyncPtaxButton />
                   </div>
                 </div>
               </div>

@@ -41,6 +41,9 @@ model Transaction {
   purchaseRate       Float? // Contracted yield rate at purchase time (bonds only, e.g. 6.12 for IPCA+6.12%)
   nraTax             Float? // Non-Resident Alien withholding tax rate (e.g. 0.3 = 30%)
   notes              String?
+  fxSnapshots        Json?    // Snapshot of official FX rates at trade time.
+                              // Shape: { "USD/BRL": { "source": "PTAX", "buy": 5.12, "sell": 5.13 } }
+                              // Keyed by "QUOTE/BASE" pair; supports multiple currencies per transaction.
   reinvestDividends  Boolean  @default(false) // DRIP: auto-reinvest dividends from this position
   isDrip             Boolean  @default(false) // true when this BUY was auto-created by DRIP
   accountId          String
@@ -61,6 +64,22 @@ model PriceHistory {
 
   @@unique([symbol, instrumentProvider, date])
   @@index([symbol, instrumentProvider])
+}
+
+// Official FX closing rates fetched from an authoritative source (e.g. BCB PTAX).
+// Populated on-demand only for dates where transactions exist — keeps the table lean.
+// currency = the foreign (non-BRL) ISO 4217 code, e.g. "USD", "EUR".
+// The implicit base is always BRL (the domestic currency for Brazilian tax reporting).
+model FxRateHistory {
+  id       String   @id @default(cuid())
+  date     DateTime // calendar date, midnight UTC
+  currency String   // foreign currency code, e.g. "USD" (rate: 1 currency = X BRL)
+  source   String   @default("PTAX") // rate-source identifier, e.g. "PTAX", "ECB"
+  buyRate  Float    // cotacaoCompra — BCB's buy rate
+  sellRate Float    // cotacaoVenda  — BCB's sell rate
+
+  @@unique([date, currency, source])
+  @@index([date, currency])
 }
 
 // Cached instrument metadata.
