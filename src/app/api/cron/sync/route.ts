@@ -1,5 +1,9 @@
 import { importAllDividendsAction } from "@/actions/dividend.actions";
 import { syncAllPriceHistoryAction } from "@/actions/price-history.actions";
+import {
+  backfillPtaxSnapshotsAction,
+  syncPtaxRatesAction,
+} from "@/actions/ptax.actions";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -10,10 +14,23 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Step 1: Import dividends and prices in parallel (independent)
     const [dividends, prices] = await Promise.allSettled([
       importAllDividendsAction(false),
       syncAllPriceHistoryAction(),
     ]);
+
+    // Step 2: Sync PTAX rates — runs after dividends so new transactions are included
+    const ptaxSync = await syncPtaxRatesAction().then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      (reason: unknown) => ({ status: "rejected" as const, reason }),
+    );
+
+    // Step 3: Backfill fxSnapshots on any transactions still missing them
+    const ptaxBackfill = await backfillPtaxSnapshotsAction().then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      (reason: unknown) => ({ status: "rejected" as const, reason }),
+    );
 
     const result = {
       dividends: dividends.status === "fulfilled"
@@ -22,6 +39,12 @@ export async function POST(req: NextRequest) {
       prices: prices.status === "fulfilled"
         ? prices.value
         : { error: String(prices.reason) },
+      ptaxSync: ptaxSync.status === "fulfilled"
+        ? ptaxSync.value
+        : { error: String(ptaxSync.reason) },
+      ptaxBackfill: ptaxBackfill.status === "fulfilled"
+        ? ptaxBackfill.value
+        : { error: String(ptaxBackfill.reason) },
     };
 
     console.log("Cron job result:", result);
