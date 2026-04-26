@@ -1,10 +1,8 @@
-import { SetHeader } from "@/components/header-context"
-import { ImportAllDividendsButton } from "@/components/import-all-dividends-button"
-import { Page } from "@/components/page"
-import { SyncPriceHistoryButton } from "@/components/sync-price-history-button"
-import { SyncPtaxButton } from "@/components/sync-ptax-button"
 import { ClearCacheButton } from "@/components/clear-cache-button"
-import { ArrowRightIcon, BarChart2Icon, DownloadIcon, EraserIcon, RefreshCwIcon, UploadIcon, GlobeIcon } from "lucide-react"
+import { SetHeader } from "@/components/header-context"
+import { Page } from "@/components/page"
+import { SyncAllButton } from "@/components/sync-all-button"
+import { ArrowRightIcon, DownloadIcon, EraserIcon, RefreshCwIcon, UploadIcon } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -61,37 +59,23 @@ export default function SettingsPage() {
               </div>
             </Link>
 
-            {/* Refetch All Dividends — inline action */}
+            {/* Sync All — dividends, prices, PTAX rates & snapshots */}
             <div className="rounded-lg border p-4">
               <div className="flex items-start gap-3">
                 <RefreshCwIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <div className="flex flex-1 flex-col gap-3">
                   <div>
-                    <p className="text-sm font-medium">Refetch All Dividends</p>
+                    <p className="text-sm font-medium">Sync All</p>
                     <p className="mt-0.5 text-sm text-muted-foreground">
-                      Re-fetches dividends for every symbol in your portfolio and
-                      overwrites existing dividend transactions with the latest
-                      data. Use this when your share counts have changed due to
-                      new buys or sells.
+                      Imports new dividends, fetches latest price history, syncs
+                      PTAX exchange rates from BCB, and backfills FX snapshots
+                      on any transactions that are missing them. Safe to run at
+                      any time — only missing data is downloaded.
                     </p>
                   </div>
-                  <ImportAllDividendsButton overwrite />
-                </div>
-              </div>
-            </div>
-
-            {/* Sync Price History — inline action */}
-            <div className="rounded-lg border p-4">
-              <div className="flex items-start gap-3">
-                <BarChart2Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                <div className="flex flex-1 flex-col gap-3">
-                  <div>
-                    <p className="text-sm font-medium">Sync Price History</p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      Fetches weekly adjusted-close prices for every symbol in your portfolio. Only missing weeks are downloaded — run this once to backfill history and then periodically to extend it.
-                    </p>
+                  <div className="flex">
+                    <SyncAllButton />
                   </div>
-                  <SyncPriceHistoryButton />
                 </div>
               </div>
             </div>
@@ -109,24 +93,6 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex">
                     <ClearCacheButton />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Sync & Backfill PTAX — inline action */}
-            <div className="rounded-lg border p-4">
-              <div className="flex items-start gap-3">
-                <GlobeIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                <div className="flex flex-1 flex-col gap-3">
-                  <div>
-                    <p className="text-sm font-medium">Sync & Backfill PTAX</p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      Fetches official BCB PTAX closing rates for all transaction dates across foreign currency accounts, and backfills the FX snapshot for past transactions. Essential for Brazilian tax reporting.
-                    </p>
-                  </div>
-                  <div className="flex">
-                    <SyncPtaxButton />
                   </div>
                 </div>
               </div>
