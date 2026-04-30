@@ -86,43 +86,88 @@ describe('Portfolio Utils', () => {
       // Total value = 1725
       expect(chart[0].value).toBe(1725);
     });
-  describe('Time-Weighted Return (TWR)', () => {
-    it('calculates compound TWR correctly isolating cash flows', () => {
-      // Week 1: Buy 10 @ $100 = $1,000 cash flow
-      // End of Week 1: Price = $110 -> Value $1,100
-      // Week 1 Return = (1100 - 1000) / 1000 = 10%
-      //
-      // Week 2: Buy 5 @ $110 = $550 cash flow
-      // End of Week 2: Price = $120 -> Value 15 * $120 = $1,800
-      // Week 2 Return = (1800 - (1100 + 550)) / (1100 + 550) = (1800 - 1650) / 1650 = 150 / 1650 = ~9.09%
-      // 
-      // Cumulative TWR = (1.10) * (1.0909) - 1 = 1.20 - 1 = 20%
-      
-      const transactions = [
-        { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-01'), quantity: 10, unitPrice: 100, fee: 0, accountCurrency: 'USD' },
-        { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-15'), quantity: 5, unitPrice: 110, fee: 0, accountCurrency: 'USD' },
-      ];
 
-      const priceHistoryMap = new Map([
-        ['AAPL', [
-          { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-05'), close: 110, id: '1', createdAt: new Date() },
-          { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-12'), close: 120, id: '2', createdAt: new Date() },
-        ]]
-      ]);
+    describe('Time-Weighted Return (TWR)', () => {
+      it('calculates compound TWR correctly isolating cash flows', () => {
+        // Week 1: Buy 10 @ $100 = $1,000 cash flow
+        // End of Week 1: Price = $110 -> Value $1,100
+        // Week 1 Return = (1100 - 1000) / 1000 = 10%
+        //
+        // Week 2: Buy 5 @ $110 = $550 cash flow
+        // End of Week 2: Price = $120 -> Value 15 * $120 = $1,800
+        // Week 2 Return = (1800 - (1100 + 550)) / (1100 + 550) = (1800 - 1650) / 1650 = 150 / 1650 = ~9.09%
+        //
+        // Cumulative TWR = (1.10) * (1.0909) - 1 = 1.20 - 1 = 20%
 
-      const chart = computeOverallChart(transactions, priceHistoryMap);
-      
-      expect(chart).toHaveLength(2);
-      
-      // Week 1
-      expect(chart[0].value).toBe(1100);
-      expect(chart[0].twr).toBeCloseTo(0.10, 4);
+        const transactions = [
+          { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-01'), quantity: 10, unitPrice: 100, fee: 0, accountCurrency: 'USD' },
+          { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-15'), quantity: 5, unitPrice: 110, fee: 0, accountCurrency: 'USD' },
+        ];
 
-      // Week 2
-      expect(chart[1].value).toBe(1800);
-      // (1.10) * (1 + 150/1650) - 1
-      expect(chart[1].twr).toBeCloseTo(0.20, 4);
+        const priceHistoryMap = new Map([
+          ['AAPL', [
+            { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-05'), close: 110, id: '1', createdAt: new Date() },
+            { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-12'), close: 120, id: '2', createdAt: new Date() },
+          ]]
+        ]);
+
+        const chart = computeOverallChart(transactions, priceHistoryMap);
+
+        expect(chart).toHaveLength(2);
+
+        // Week 1
+        expect(chart[0].value).toBe(1100);
+        expect(chart[0].twr).toBeCloseTo(0.10, 4);
+
+        // Week 2
+        expect(chart[1].value).toBe(1800);
+        // (1.10) * (1 + 150/1650) - 1
+        expect(chart[1].twr).toBeCloseTo(0.20, 4);
+      });
+
+      it('includes cash dividends as portfolio returns instead of price losses', () => {
+        const transactions = [
+          { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-01'), quantity: 10, unitPrice: 100, fee: 0, accountCurrency: 'USD' },
+          { symbol: 'AAPL', type: 'DIVIDEND', date: new Date('2024-01-12'), quantity: 10, unitPrice: 1, fee: 0, nraTax: null, accountCurrency: 'USD' },
+        ];
+
+        const priceHistoryMap = new Map([
+          ['AAPL', [
+            { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-05'), close: 100, id: '1', createdAt: new Date() },
+            { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-12'), close: 99, id: '2', createdAt: new Date() },
+          ]]
+        ]);
+
+        const chart = computeOverallChart(transactions, priceHistoryMap);
+
+        expect(chart).toHaveLength(2);
+        expect(chart[0].twr).toBeCloseTo(0, 4);
+        // End value is $990 after a $10 cash dividend, so total return is flat.
+        expect(chart[1].value).toBe(990);
+        expect(chart[1].twr).toBeCloseTo(0, 4);
+      });
+
+      it('handles DRIP dividends as a dividend withdrawal offset by a reinvestment BUY', () => {
+        const transactions = [
+          { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-01'), quantity: 10, unitPrice: 100, fee: 0, accountCurrency: 'USD' },
+          { symbol: 'AAPL', type: 'DIVIDEND', date: new Date('2024-01-12'), quantity: 10, unitPrice: 1, fee: 0, nraTax: null, accountCurrency: 'USD' },
+          { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-12'), quantity: 0.1, unitPrice: 100, fee: 0, accountCurrency: 'USD' },
+        ];
+
+        const priceHistoryMap = new Map([
+          ['AAPL', [
+            { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-05'), close: 100, id: '1', createdAt: new Date() },
+            { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-12'), close: 100, id: '2', createdAt: new Date() },
+          ]]
+        ]);
+
+        const chart = computeOverallChart(transactions, priceHistoryMap);
+
+        expect(chart).toHaveLength(2);
+        expect(chart[1].value).toBe(1010);
+        expect(chart[1].cost).toBe(1010);
+        expect(chart[1].twr).toBeCloseTo(0.01, 4);
+      });
     });
-  });
   });
 });

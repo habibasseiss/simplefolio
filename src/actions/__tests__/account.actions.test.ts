@@ -93,6 +93,7 @@ describe("Account Actions", () => {
 
       try {
         await updateAccountAction("acc-2", {}, formData);
+        expect.unreachable("Should have thrown redirect");
       } catch (e) {
         expect(e).toBeInstanceOf(RedirectError);
         expect((e as Error).message).toBe("/accounts/acc-2");
@@ -112,6 +113,7 @@ describe("Account Actions", () => {
     it("deletes account and redirects to /accounts", async () => {
       try {
         await deleteAccountAction("acc-3");
+        expect.unreachable("Should have thrown redirect");
       } catch (e) {
         expect(e).toBeInstanceOf(RedirectError);
         expect((e as Error).message).toBe("/accounts");

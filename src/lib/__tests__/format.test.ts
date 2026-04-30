@@ -31,6 +31,7 @@ describe("Format Utils", () => {
     it("formats numbers with custom fraction digits", () => {
       expect(formatNumber(100, 0)).toBe("100");
       expect(formatNumber(100, 4)).toBe("100");
+      expect(formatNumber(100.12345, 4)).toBe("100.1235");
     });
   });
 });

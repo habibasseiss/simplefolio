@@ -75,10 +75,9 @@ export function TimeWeightedReturnChart({
     return null
   }
 
-  // TWR is a geometric measure. To show the TWR *during* a selected time period,
-  // we must divide out the growth that occurred before the period started.
-  // TWR_period = (1 + TWR_current) / (1 + TWR_start) - 1
-  const baseTwr = filteredData[0]?.twr ?? 0
+  // TWR is a geometric measure. Range views divide out earlier growth, while
+  // Total already represents the full cumulative return from portfolio start.
+  const baseTwr = timeRange === "Total" ? 0 : (filteredData[0]?.twr ?? 0)
 
   const formatted = filteredData.map((d) => ({
     date: d.date,

@@ -20,12 +20,14 @@ export interface TransactionForCashFlow {
  * Builds the cash-flow array used to compute XIRR (annualized return) for a portfolio.
  *
  * Cash-flow sign convention (from the investor's perspective):
- *   - BUY  (non-DRIP)      → negative  (cash leaves wallet)
+ *   - BUY                  → negative  (cash enters the portfolio)
  *   - SELL                  → positive  (cash returns to wallet)
  *   - DIVIDEND (non-DRIP)   → positive  (income received)
  *   - Terminal portfolio value → positive  (hypothetical liquidation)
  *
- * DRIPs are excluded because they are internal reinvestments — no external cash moves.
+ * DRIP BUYs are included because dividends are stored as separate transactions.
+ * A paired dividend (+) and DRIP BUY (-) therefore net to zero external cash
+ * while preserving total-return performance.
  *
  * @param transactions     All transactions in the portfolio
  * @param fxRate           Function that converts a currency to the base currency (e.g. USD).
@@ -45,7 +47,7 @@ export function buildXirrCashFlows(
   for (const tx of transactions) {
     const amountBase = calcTransactionTotal(tx) * fxRate(tx.account.currency);
 
-    if (tx.type === "BUY" && !tx.isDrip) {
+    if (tx.type === "BUY") {
       // Cash out of pocket into portfolio
       cashFlows.push({ amount: -amountBase, date: new Date(tx.date) });
     } else if (tx.type === "SELL") {

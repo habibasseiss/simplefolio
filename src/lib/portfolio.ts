@@ -4,6 +4,7 @@
  */
 
 import type { PriceHistoryRow } from "@/repositories/price-history.repository";
+import { calcTransactionTotal } from "@/domain/transaction/transaction.utils";
 
 /** Minimal transaction shape needed by the portfolio computations. */
 export type PortfolioTx = {
@@ -13,6 +14,7 @@ export type PortfolioTx = {
   quantity: number;
   unitPrice: number;
   fee: number;
+  nraTax?: number | null;
   /** ISO 4217 currency of the transaction's account. Used for FX conversion. */
   accountCurrency?: string;
 };
@@ -90,8 +92,9 @@ function costAt(
 }
 
 /**
- * Computes the net cash flow (deposits minus withdrawals) between two dates.
- * BUY = cash added to portfolio (+). SELL = cash removed from portfolio (-).
+ * Computes the net cash flow between two dates.
+ * BUY = cash added to portfolio (+). SELL/DIVIDEND = cash removed from portfolio (-).
+ * For DRIPs, the dividend withdrawal and reinvestment BUY offset each other.
  */
 function netCashFlowBetween(
   txs: PortfolioTx[],
@@ -103,15 +106,17 @@ function netCashFlowBetween(
   let flow = 0;
   for (const tx of txs) {
     if (symbol && tx.symbol !== symbol) continue;
-    if (tx.type !== "BUY" && tx.type !== "SELL") continue;
+    if (tx.type !== "BUY" && tx.type !== "SELL" && tx.type !== "DIVIDEND") continue;
 
     const d = new Date(tx.date);
     if ((!fromDate || d > fromDate) && d <= toDate) {
       const txFx = fxRates?.get(tx.accountCurrency ?? "USD") ?? 1;
       if (tx.type === "BUY") {
-        flow += (tx.quantity * tx.unitPrice + tx.fee) * txFx;
+        flow += calcTransactionTotal(tx) * txFx;
       } else if (tx.type === "SELL") {
-        flow -= (tx.quantity * tx.unitPrice - tx.fee) * txFx;
+        flow -= calcTransactionTotal(tx) * txFx;
+      } else if (tx.type === "DIVIDEND") {
+        flow -= calcTransactionTotal(tx) * txFx;
       }
     }
   }
@@ -129,7 +134,9 @@ export function computeSymbolChart(
   priceHistory: PriceHistoryRow[],
 ): ChartPoint[] {
   const symbolTxs = [...transactions]
-    .filter((tx) => tx.type === "BUY" || tx.type === "SELL")
+    .filter((tx) =>
+      tx.type === "BUY" || tx.type === "SELL" || tx.type === "DIVIDEND"
+    )
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   if (symbolTxs.length === 0 || priceHistory.length === 0) return [];
 
@@ -213,7 +220,9 @@ function computePortfolioChart(
   if (symbols.length === 0) return [];
 
   const sortedTxs = [...transactions]
-    .filter((tx) => tx.type === "BUY" || tx.type === "SELL")
+    .filter((tx) =>
+      tx.type === "BUY" || tx.type === "SELL" || tx.type === "DIVIDEND"
+    )
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // Find the date of the earliest BUY transaction so we don't render a flat

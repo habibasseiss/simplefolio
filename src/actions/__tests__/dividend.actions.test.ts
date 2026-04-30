@@ -22,6 +22,7 @@ vi.mock("@/lib/prisma", () => ({
 
 describe("Dividend Actions", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     vi.clearAllMocks();
     vi.mocked(userRepo.getDefaultUserId).mockResolvedValue("user-1");
   });
@@ -51,16 +52,18 @@ describe("Dividend Actions", () => {
       expect(result.error).toBe("Failed to fetch dividends");
     });
 
-    it("processes dividends and uses pricehistory for DRIP", async () => {
+    it("processes dividends and creates a DRIP buy using net dividend divided by price history", async () => {
+      vi.stubEnv("NRA_TAX", "0.15");
+      const getDividends = vi.fn().mockResolvedValue([
+        {
+          amount: 1.5,
+          exDividendDate: "2024-03-01",
+          paymentDate: "2024-03-15",
+        },
+      ]);
       vi.mocked(finance.getFinanceProvider).mockReturnValue({
         getSymbolInfo: vi.fn(),
-        getDividends: vi.fn().mockResolvedValue([
-          {
-            amount: 1.5,
-            exDividendDate: "2024-03-01",
-            paymentDate: "2024-03-15",
-          },
-        ]),
+        getDividends,
       } as any);
 
       // Mock an account holding 100 shares of AAPL that reinvests dividends
@@ -85,27 +88,139 @@ describe("Dividend Actions", () => {
       const result = await importDividendsAction("AAPL");
 
       expect(result.inserted).toBe(1);
+      expect(getDividends).toHaveBeenCalledWith("AAPL", undefined);
+      expect(prisma.priceHistory.findFirst).toHaveBeenCalledWith({
+        where: {
+          symbol: "AAPL",
+          date: { lte: new Date("2024-03-09T00:00:00.000Z") },
+        },
+        orderBy: { date: "desc" },
+      });
       // It should create the dividend itself
-      expect(prisma.transaction.create).toHaveBeenCalledWith(
+      expect(prisma.transaction.create).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
           data: expect.objectContaining({
+            accountId: "acc-1",
             type: "DIVIDEND",
             symbol: "AAPL",
+            date: new Date("2024-03-15"),
             quantity: 100,
             unitPrice: 1.5,
+            nraTax: 0.15,
           }),
         }),
       );
       // It should create the DRIP buy
-      expect(prisma.transaction.create).toHaveBeenCalledWith(
+      expect(prisma.transaction.create).toHaveBeenNthCalledWith(
+        2,
         expect.objectContaining({
           data: expect.objectContaining({
+            accountId: "acc-1",
             type: "BUY",
             isDrip: true,
             symbol: "AAPL",
+            date: new Date("2024-03-15"),
+            quantity: 0.85,
+            unitPrice: 150,
+            fee: 0,
+            nraTax: 0.15,
           }),
         }),
       );
+    });
+
+    it("skips an existing dividend when overwrite is false", async () => {
+      const getDividends = vi.fn().mockResolvedValue([
+        {
+          amount: 1.5,
+          exDividendDate: "2024-03-01",
+          paymentDate: "2024-03-15",
+        },
+      ]);
+      vi.mocked(finance.getFinanceProvider).mockReturnValue({
+        getSymbolInfo: vi.fn(),
+        getDividends,
+      } as any);
+      vi.mocked(prisma.account.findMany).mockResolvedValue([{
+        id: "acc-1",
+        transactions: [
+          {
+            type: "BUY",
+            symbol: "AAPL",
+            date: new Date("2024-01-01"),
+            quantity: 100,
+            reinvestDividends: true,
+          },
+        ],
+      }] as any);
+      vi.mocked(prisma.transaction.findFirst)
+        .mockResolvedValueOnce({ date: new Date("2024-03-15") } as any)
+        .mockResolvedValueOnce({ id: "div-existing" } as any);
+
+      const result = await importDividendsAction("AAPL");
+
+      expect(result).toEqual({ inserted: 0, skipped: 1 });
+      expect(getDividends).toHaveBeenCalledWith(
+        "AAPL",
+        new Date("2024-03-15"),
+      );
+      expect(prisma.transaction.create).not.toHaveBeenCalled();
+      expect(prisma.transaction.update).not.toHaveBeenCalled();
+      expect(prisma.priceHistory.findFirst).not.toHaveBeenCalled();
+    });
+
+    it("updates existing dividend and DRIP buy when overwrite is true", async () => {
+      vi.stubEnv("NRA_TAX", "0.15");
+      vi.mocked(finance.getFinanceProvider).mockReturnValue({
+        getSymbolInfo: vi.fn(),
+        getDividends: vi.fn().mockResolvedValue([
+          {
+            amount: 1.5,
+            exDividendDate: "2024-03-01",
+            paymentDate: "2024-03-15",
+          },
+        ]),
+      } as any);
+      vi.mocked(prisma.account.findMany).mockResolvedValue([{
+        id: "acc-1",
+        transactions: [
+          {
+            type: "BUY",
+            symbol: "AAPL",
+            date: new Date("2024-01-01"),
+            quantity: 100,
+            reinvestDividends: true,
+          },
+        ],
+      }] as any);
+      vi.mocked(prisma.transaction.findFirst)
+        .mockResolvedValueOnce({ id: "div-existing" } as any)
+        .mockResolvedValueOnce({ id: "drip-existing" } as any);
+      vi.mocked(prisma.priceHistory.findFirst).mockResolvedValue(
+        { close: 150 } as any,
+      );
+
+      const result = await importDividendsAction("AAPL", true);
+
+      expect(result).toEqual({ inserted: 0, skipped: 1 });
+      expect(prisma.transaction.create).not.toHaveBeenCalled();
+      expect(prisma.transaction.update).toHaveBeenNthCalledWith(1, {
+        where: { id: "div-existing" },
+        data: expect.objectContaining({
+          quantity: 100,
+          unitPrice: 1.5,
+          nraTax: 0.15,
+        }),
+      });
+      expect(prisma.transaction.update).toHaveBeenNthCalledWith(2, {
+        where: { id: "drip-existing" },
+        data: expect.objectContaining({
+          quantity: 0.85,
+          unitPrice: 150,
+          nraTax: 0.15,
+        }),
+      });
     });
   });
 

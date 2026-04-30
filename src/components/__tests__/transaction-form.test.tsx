@@ -5,7 +5,7 @@ import { TransactionForm } from '../transaction-form';
 
 // Mock SymbolCombobox so we don't have to deal with Command dialog internals
 vi.mock('@/components/symbol-combobox', () => ({
-  SymbolCombobox: ({ defaultValue }: any) => (
+  SymbolCombobox: ({ defaultValue }: { defaultValue?: string }) => (
     <input data-testid="symbol-combobox" name="symbol" defaultValue={defaultValue} />
   )
 }));

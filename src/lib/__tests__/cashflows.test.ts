@@ -115,15 +115,15 @@ describe("buildXirrCashFlows – amounts", () => {
 // ─── DRIP exclusion ────────────────────────────────────────────────────────
 
 describe("buildXirrCashFlows – DRIP handling", () => {
-  it("excludes DRIP BUY transactions (no external cash flow)", () => {
+  it("includes DRIP BUY transactions so paired dividends and reinvestments net out", () => {
     const cfs = buildXirrCashFlows(
       [tx({ type: "BUY", isDrip: true })],
       usdRate,
       0,
       asOf,
     );
-    // Only terminal value (0) would be added, but since it's 0 it's skipped too
-    expect(cfs).toHaveLength(0);
+    expect(cfs).toHaveLength(1);
+    expect(cfs[0].amount).toBeLessThan(0);
   });
 
   it("excludes DRIP DIVIDEND transactions (reinvested, no cash to wallet)", () => {
@@ -146,9 +146,9 @@ describe("buildXirrCashFlows – DRIP handling", () => {
       0,
       asOf,
     );
-    // Only the non-DRIP BUY should produce a cash flow
-    expect(cfs).toHaveLength(1);
+    expect(cfs).toHaveLength(2);
     expect(cfs[0].amount).toBeLessThan(0);
+    expect(cfs[1].amount).toBeLessThan(0);
   });
 
   it("SELL is never treated as DRIP (always included)", () => {
@@ -357,34 +357,38 @@ describe("buildXirrCashFlows – realistic portfolio scenario", () => {
 
     // Expected cash flows:
     // 1. BUY:      -(50 * 100 + 10) * 1   = -5010      on 2023-01-15
-    // 2. (DRIP BUY excluded)
+    // 2. DRIP BUY: -(2 * 105) * 1         = -210       on 2023-04-01
     // 3. DIVIDEND: +(50 * 0.8 * 0.85) * 1 = +34        on 2023-07-01
     // 4. (DRIP DIVIDEND excluded)
     // 5. SELL:     +(20 * 120 - 5) * 1    = +2395       on 2024-01-15
     // 6. BUY EUR:  -(30 * 90 + 8) * 1.08  = -2924.64   on 2024-06-01
     // 7. Terminal:  +15000                              on 2025-01-01
 
-    expect(cfs).toHaveLength(5);
+    expect(cfs).toHaveLength(6);
 
     // BUY USD
     expect(cfs[0].amount).toBeCloseTo(-5010, 2);
     expect(cfs[0].date).toEqual(new Date("2023-01-15"));
 
+    // DRIP BUY
+    expect(cfs[1].amount).toBeCloseTo(-210, 2);
+    expect(cfs[1].date).toEqual(new Date("2023-04-01"));
+
     // DIVIDEND (net of 15% NRA tax)
-    expect(cfs[1].amount).toBeCloseTo(34, 2);
-    expect(cfs[1].date).toEqual(new Date("2023-07-01"));
+    expect(cfs[2].amount).toBeCloseTo(34, 2);
+    expect(cfs[2].date).toEqual(new Date("2023-07-01"));
 
     // SELL
-    expect(cfs[2].amount).toBeCloseTo(2395, 2);
-    expect(cfs[2].date).toEqual(new Date("2024-01-15"));
+    expect(cfs[3].amount).toBeCloseTo(2395, 2);
+    expect(cfs[3].date).toEqual(new Date("2024-01-15"));
 
     // BUY EUR (converted at 1.08)
-    expect(cfs[3].amount).toBeCloseTo(-2924.64, 2);
-    expect(cfs[3].date).toEqual(new Date("2024-06-01"));
+    expect(cfs[4].amount).toBeCloseTo(-2924.64, 2);
+    expect(cfs[4].date).toEqual(new Date("2024-06-01"));
 
     // Terminal value
-    expect(cfs[4].amount).toBe(15000);
-    expect(cfs[4].date).toEqual(asOf);
+    expect(cfs[5].amount).toBe(15000);
+    expect(cfs[5].date).toEqual(asOf);
   });
 });
 
@@ -425,6 +429,42 @@ describe("buildXirrCashFlows – empty / edge inputs", () => {
 //  3. Mixing currencies without conversion would silently corrupt the result
 
 describe("buildXirrCashFlows + xirr – multi-currency end-to-end invariant", () => {
+  it("paired dividend and DRIP buy do not double-count reinvested income", () => {
+    const cfs = buildXirrCashFlows(
+      [
+        tx({
+          type: "BUY",
+          quantity: 1,
+          unitPrice: 100,
+          fee: 0,
+          date: new Date("2024-01-01"),
+        }),
+        tx({
+          type: "DIVIDEND",
+          quantity: 1,
+          unitPrice: 10,
+          fee: 0,
+          nraTax: 0,
+          date: new Date("2024-06-01"),
+        }),
+        tx({
+          type: "BUY",
+          quantity: 0.1,
+          unitPrice: 100,
+          fee: 0,
+          isDrip: true,
+          date: new Date("2024-06-01"),
+        }),
+      ],
+      usdRate,
+      110,
+      new Date("2025-01-01"),
+    );
+
+    expect(cfs.map((cf) => cf.amount)).toEqual([-100, 10, -10, 110]);
+    expect(xirr(cfs)).toBeCloseTo(0.10, 2);
+  });
+
   it("mixed-currency portfolio gives same XIRR as its USD-equivalent", () => {
     // Portfolio: two accounts — USD and EUR
     // EUR/USD rate: 1.10 (1 EUR = 1.10 USD)
@@ -536,7 +576,6 @@ describe("buildXirrCashFlows + xirr – multi-currency end-to-end invariant", ()
     ];
 
     const cfs = buildXirrCashFlows(transactions, fxRate, 5000, asOf);
-    const result = xirr(cfs);
 
     // buildXirrCashFlows preserves insertion order: BUY, SELL, terminal.
     // (cfs[0] = BUY negative, cfs[1] = SELL positive, cfs[2] = terminal)
@@ -553,4 +592,3 @@ describe("buildXirrCashFlows + xirr – multi-currency end-to-end invariant", ()
     expect(cfs[2].amount).toBe(5000);
   });
 });
-

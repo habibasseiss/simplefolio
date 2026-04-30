@@ -157,11 +157,7 @@ describe('xirr – portfolio management scenarios', () => {
     ];
     // With DCA the money-weighted return is higher than a simple
     // (6450/6000 - 1) because earlier contributions had more time
-    const result = xirr(cfs);
-    expect(result).not.toBeNull();
-    // Result should be positive and reasonable
-    expect(result!).toBeGreaterThan(0.05);
-    expect(result!).toBeLessThan(0.30);
+    expectXirr(cfs, 0.0955, 0.0005);
   });
 
   it('buy, receive dividends, current valuation', () => {
@@ -186,10 +182,7 @@ describe('xirr – portfolio management scenarios', () => {
       { amount: 6000, date: d('2025-01-01') },  // remaining half also worth $6,000
     ];
     // Total received: $12,000 on a $10,000 investment
-    const result = xirr(cfs);
-    expect(result).not.toBeNull();
-    expect(result!).toBeGreaterThan(0.05);
-    expect(result!).toBeLessThan(0.15);
+    expectXirr(cfs, 0.1306, 0.0005);
   });
 
   it('buy, full sell at a loss', () => {
@@ -219,12 +212,8 @@ describe('xirr – portfolio management scenarios', () => {
       { amount: -4000, date: d('2024-07-01') },
       { amount: 12500, date: d('2025-01-15') },
     ];
-    const result = xirr(cfs);
-    expect(result).not.toBeNull();
     // Net invested: 5000+3000+4000=12000, got back: 80+2000+90+12500=14670
-    // Annualized over 2 years, expect a moderate positive return
-    expect(result!).toBeGreaterThan(0.0);
-    expect(result!).toBeLessThan(0.50);
+    expectXirr(cfs, 0.1685, 0.0005);
   });
 
   it('DRIP scenario: only external cash flows matter', () => {
@@ -307,11 +296,7 @@ describe('xirr – same-day cash flow consolidation', () => {
       { amount: 50, date: d('2024-01-01') },     // ex-div day purchase
       { amount: 10500, date: d('2025-01-01') },
     ];
-    const result = xirr(cfs);
-    expect(result).not.toBeNull();
-    // (~10500/9950 - 1 ≈ 5.5%)
-    expect(result!).toBeGreaterThan(0.04);
-    expect(result!).toBeLessThan(0.07);
+    expectXirr(cfs, 0.0552, 0.0005);
   });
 });
 
@@ -355,12 +340,7 @@ describe('xirr – robustness', () => {
     // Terminal value: total invested $12,000, portfolio worth $13,200 (10% total gain)
     cfs.push({ amount: 13200, date: new Date(2025, 0, 1) });
 
-    const result = xirr(cfs);
-    expect(result).not.toBeNull();
-    // The money-weighted return should be positive
-    expect(result!).toBeGreaterThan(0.0);
-    // And less than the naive 10% because later investments had less time
-    expect(result!).toBeLessThan(0.20);
+    expectXirr(cfs, 0.0941, 0.0005);
   });
 
   it('handles unsorted cash flows (should sort internally)', () => {
@@ -381,11 +361,8 @@ describe('xirr – robustness', () => {
       { amount: 12, date: d('2023-06-01') },      // tiny dividend
       { amount: 175000, date: d('2025-01-01') },  // terminal value
     ];
-    const result = xirr(cfs);
-    expect(result).not.toBeNull();
     // Net invested: $150,000 over 3 years, got ~$175,025
-    expect(result!).toBeGreaterThan(0.0);
-    expect(result!).toBeLessThan(0.15);
+    expectXirr(cfs, 0.0594, 0.0005);
   });
 });
 
@@ -412,13 +389,10 @@ describe('xirr – dashboard integration parity', () => {
       { amount: 100, date: d('2024-07-01') },     // DIVIDEND
       { amount: 7500, date: d('2025-01-01') },    // terminal portfolio value
     ];
-    const result = xirr(cfs);
-    expect(result).not.toBeNull();
     // Total cash out: 10010
     // Total cash in: 150 + 3995 + 100 + 7500 = 11745
-    // Profit: $1735 over 2 years → moderate positive return
-    expect(result!).toBeGreaterThan(0.05);
-    expect(result!).toBeLessThan(0.15);
+    // Profit: $1735 over 2 years
+    expectXirr(cfs, 0.1034, 0.0005);
   });
 
   it('returns null gracefully when portfolio has no terminal value and no sells', () => {
