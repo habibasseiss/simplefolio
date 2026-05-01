@@ -49,6 +49,22 @@ describe('Portfolio Utils', () => {
       expect(chart[0].cost).toBe(500); // Cost basis is accurately $500!
       expect(chart[0].value).toBe(5 * 160); // Remaining 5 shares * $160
     });
+
+    it('does not include transactions after the price point date', () => {
+      const transactions = [
+        { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-01'), quantity: 10, unitPrice: 100, fee: 0 },
+        { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-03'), quantity: 10, unitPrice: 100, fee: 0 },
+      ];
+      const priceHistory = [
+        { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-02'), close: 110, id: '1', createdAt: new Date() },
+      ];
+
+      const chart = computeSymbolChart(transactions, priceHistory);
+
+      expect(chart).toHaveLength(1);
+      expect(chart[0].cost).toBe(1000);
+      expect(chart[0].value).toBe(1100);
+    });
   });
 
   describe('computeOverallChart', () => {
@@ -87,6 +103,31 @@ describe('Portfolio Utils', () => {
       expect(chart[0].value).toBe(1725);
     });
 
+    it('does not use future price rows for earlier chart points', () => {
+      const transactions = [
+        { symbol: 'AAPL', type: 'BUY', date: new Date('2024-01-01'), quantity: 10, unitPrice: 100, fee: 0, accountCurrency: 'USD' },
+        { symbol: 'MSFT', type: 'BUY', date: new Date('2024-01-01'), quantity: 10, unitPrice: 50, fee: 0, accountCurrency: 'USD' },
+      ];
+
+      const priceHistoryMap = new Map([
+        ['AAPL', [
+          { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2026-04-26'), close: 100, id: '1', createdAt: new Date() },
+          { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2026-05-01'), close: 110, id: '2', createdAt: new Date() },
+        ]],
+        ['MSFT', [
+          { symbol: 'MSFT', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2026-04-26'), close: 50, id: '3', createdAt: new Date() },
+        ]],
+      ]);
+
+      const chart = computeOverallChart(transactions, priceHistoryMap);
+
+      expect(chart).toHaveLength(2);
+      expect(chart[0].date).toBe('2026-04-26');
+      expect(chart[0].value).toBe(1500);
+      expect(chart[1].date).toBe('2026-05-01');
+      expect(chart[1].value).toBe(1600);
+    });
+
     describe('Time-Weighted Return (TWR)', () => {
       it('calculates compound TWR correctly isolating cash flows', () => {
         // Week 1: Buy 10 @ $100 = $1,000 cash flow
@@ -107,7 +148,7 @@ describe('Portfolio Utils', () => {
         const priceHistoryMap = new Map([
           ['AAPL', [
             { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-05'), close: 110, id: '1', createdAt: new Date() },
-            { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-12'), close: 120, id: '2', createdAt: new Date() },
+            { symbol: 'AAPL', instrumentProvider: 'YAHOO', currency: 'USD', date: new Date('2024-01-19'), close: 120, id: '2', createdAt: new Date() },
           ]]
         ]);
 

@@ -147,14 +147,13 @@ export function computeSymbolChart(
   let currentTwr = 0;
 
   return priceHistory.map((row) => {
-    const weekEnd = new Date(row.date);
-    weekEnd.setDate(weekEnd.getDate() + 6);
+    const pointDate = new Date(row.date);
 
-    const shares = sharesAt(symbolTxs, symbol, weekEnd);
-    const cost = costAt(symbolTxs, symbol, weekEnd);
+    const shares = sharesAt(symbolTxs, symbol, pointDate);
+    const cost = costAt(symbolTxs, symbol, pointDate);
     const value = shares * row.close;
 
-    const cf = netCashFlowBetween(symbolTxs, symbol, prevWeekEnd, weekEnd);
+    const cf = netCashFlowBetween(symbolTxs, symbol, prevWeekEnd, pointDate);
     const denominator = prevValue + cf;
     
     // If denominator is <= 0, it means no capital was deployed at the start of the period
@@ -163,7 +162,7 @@ export function computeSymbolChart(
     
     currentTwr = (1 + currentTwr) * (1 + periodReturn) - 1;
     prevValue = value;
-    prevWeekEnd = weekEnd;
+    prevWeekEnd = pointDate;
 
     return {
       date: row.date.toISOString().split("T")[0],
@@ -252,35 +251,35 @@ function computePortfolioChart(
   let currentTwr = 0;
 
   return weeks.map((week) => {
-    const weekDate = new Date(week + "T00:00:00Z");
-    const weekEnd = new Date(weekDate);
-    weekEnd.setDate(weekEnd.getDate() + 6);
+    const pointDate = new Date(week + "T00:00:00Z");
 
     let totalValue = 0;
     let totalCost = 0;
 
     for (const symbol of symbols) {
       const rows = priceHistoryMap.get(symbol)!;
-      // Use the most recent price available at or before this week
-      const row = [...rows].reverse().find((r) => r.date <= weekEnd);
+      // Use the most recent price available at or before the chart point.
+      // Looking ahead within the same calendar week makes earlier labels
+      // appear to already include later prices.
+      const row = [...rows].reverse().find((r) => r.date <= pointDate);
       if (!row) continue;
 
       const symbolTxs = sortedTxs.filter((tx) => tx.symbol === symbol);
-      const shares = sharesAt(symbolTxs, symbol, weekEnd);
-      const cost = costAt(symbolTxs, symbol, weekEnd, fxRates);
+      const shares = sharesAt(symbolTxs, symbol, pointDate);
+      const cost = costAt(symbolTxs, symbol, pointDate, fxRates);
       const priceFx = fxRates?.get(row.currency) ?? 1;
 
       totalValue += shares * row.close * priceFx;
       totalCost += cost;
     }
 
-    const cf = netCashFlowBetween(sortedTxs, null, prevWeekEnd, weekEnd, fxRates);
+    const cf = netCashFlowBetween(sortedTxs, null, prevWeekEnd, pointDate, fxRates);
     const denominator = prevValue + cf;
     const periodReturn = denominator > 0 ? (totalValue - denominator) / denominator : 0;
     
     currentTwr = (1 + currentTwr) * (1 + periodReturn) - 1;
     prevValue = totalValue;
-    prevWeekEnd = weekEnd;
+    prevWeekEnd = pointDate;
 
     return { 
       date: week, 

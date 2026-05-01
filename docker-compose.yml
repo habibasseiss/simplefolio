@@ -19,7 +19,9 @@ services:
     environment:
       CRON_SECRET: ${CRON_SECRET}
     command: >
-      sh -c "apk add --no-cache curl && echo '0 0 * * * /usr/bin/curl -fsSL -X POST -H \"Authorization: Bearer $$CRON_SECRET\" http://app:3000/api/cron/sync' > /etc/crontabs/root && crond -f -l 8"
+      sh -c "apk add --no-cache curl && echo '0 0 * * * /usr/bin/curl -fsSL -X
+      POST -H \"Authorization: Bearer $$CRON_SECRET\"
+      http://app:3000/api/cron/sync' > /etc/crontabs/root && crond -f -l 8"
     depends_on:
       - app
     restart: unless-stopped
@@ -30,10 +32,12 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: simplefolio
+    ports:
+      - "5432:5432"
     volumes:
       - ./database:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
