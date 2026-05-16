@@ -15,12 +15,13 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import {
+  FlameIcon,
+  FileTextIcon,
   LayoutDashboardIcon,
   LineChartIcon,
   Settings2Icon,
   TrendingUpIcon,
   WalletIcon,
-  FileTextIcon
 } from "lucide-react"
 
 const data = {
@@ -49,6 +50,11 @@ const data = {
       title: "Reports",
       url: "/reports",
       icon: <FileTextIcon />,
+    },
+    {
+      title: "FIRE Predictor",
+      url: "/fire",
+      icon: <FlameIcon />,
     },
   ],
   navSecondary: [
